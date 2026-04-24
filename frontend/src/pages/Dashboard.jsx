@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, fmtNum, ym, chartColors } from '../utils';
 import { Bar, Doughnut, Pie } from 'react-chartjs-2';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { data } = useData();
+  const navigate = useNavigate();
 
   // Aggregations
   const invValue = data.inventory.reduce((a,x) => a + Math.max(0,(x.qty - x.soldQty)) * x.costPerUnit, 0);
@@ -125,8 +127,8 @@ const Dashboard = () => {
           <div className="page-sub">Overview of your global mobile trade</div>
         </div>
         <div className="right">
-          <button className="btn btn-primary" onClick={() => window.location.href='/sales'}>+ New Sale</button>
-          <button className="btn" onClick={() => window.location.href='/expenses'}>+ Expense</button>
+          <button className="btn btn-primary" onClick={() => navigate('/sales')}>+ New Sale</button>
+          <button className="btn" onClick={() => navigate('/expenses')}>+ Expense</button>
         </div>
       </div>
 
