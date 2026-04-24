@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const STORE_KEY = 'mobilex_v1';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -65,6 +65,7 @@ function getCollection(url) {
 const fetcher = async (url) => {
   try {
     const res = await axios.get(`${API_URL}${url}`);
+    if (typeof res.data === 'string' && res.data.startsWith('<html')) throw new Error('API returned HTML via SPA fallback');
     return res.data;
   } catch (err) {
     const data = readLocal();

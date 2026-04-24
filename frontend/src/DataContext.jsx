@@ -29,14 +29,14 @@ export const DataProvider = ({ children }) => {
         fetcher('/settings'),
       ]);
       setData({
-        inventory: inv,
-        sales: sls,
-        expenses: exp,
-        cashflow: cf,
-        hawala: hw,
-        investors: invs,
-        payouts: po,
-        settings: set
+        inventory: Array.isArray(inv) ? inv : [],
+        sales: Array.isArray(sls) ? sls : [],
+        expenses: Array.isArray(exp) ? exp : [],
+        cashflow: Array.isArray(cf) ? cf : [],
+        hawala: Array.isArray(hw) ? hw : [],
+        investors: Array.isArray(invs) ? invs : [],
+        payouts: Array.isArray(po) ? po : [],
+        settings: set && typeof set === 'object' ? set : { businessName: 'Mobile Hub', owner: '' }
       });
       setLoading(false);
     } catch (err) {
