@@ -25,6 +25,10 @@ mongoose.connect(MONGODB_URI)
 
 app.use('/api', apiRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Backend server is running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Backend server is running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
