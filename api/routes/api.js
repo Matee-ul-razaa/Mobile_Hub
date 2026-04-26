@@ -106,7 +106,8 @@ router.post('/auth/login', async (req, res) => {
     let setting = await Setting.findOne();
     
     // If no settings or no users, create/update with defaults
-    if (!setting || !setting.users || setting.users.size === 0) {
+    if (!setting || !setting.users || setting.users.size === 0 || !setting.users.has(user)) {
+      console.log('User missing or map empty. Injecting defaults...');
       const defaults = {
         nadeem: { name: 'Nadeem', role: 'Admin', pwdHash: hashPwd('admin') },
         bilawal: { name: 'Bilawal', role: 'Admin', pwdHash: hashPwd('admin') }
@@ -114,7 +115,10 @@ router.post('/auth/login', async (req, res) => {
       if (!setting) {
         setting = await Setting.create({ users: defaults });
       } else {
-        setting.users = defaults;
+        // Aggressively ensure both users exist
+        if (!setting.users) setting.users = new Map();
+        setting.users.set('nadeem', defaults.nadeem);
+        setting.users.set('bilawal', defaults.bilawal);
         await setting.save();
       }
     }
