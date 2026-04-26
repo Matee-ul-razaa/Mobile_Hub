@@ -35,6 +35,7 @@ const Layout = ({ user, onLogout }) => {
   const getTitle = () => {
     const path = location.pathname.substring(1);
     if (!path) return 'Dashboard';
+    if (path === 'cash-in-out') return 'Cash In / Out';
     return path.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
   };
 
@@ -55,7 +56,6 @@ const Layout = ({ user, onLogout }) => {
             <div className="user-name">{user==='nadeem'?'Nadeem':'Bilawal'}</div>
             <div className="user-role">Administrator</div>
           </div>
-          <button className="logout-btn" onClick={onLogout} title="Sign Out">✕</button>
         </div>
 
         <nav className="nav-list">
@@ -79,9 +79,12 @@ const Layout = ({ user, onLogout }) => {
       <main className="content-wrap">
         <header className="top-bar">
           <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
-          <h2 className="current-title">{getTitle()==='Fazi Cash'?'Fazi Cash (Hawala)':getTitle()}</h2>
+          <div style={{ flex: 1 }}>
+            <h2 className="current-title">{getTitle()}</h2>
+          </div>
           <div className="top-actions">
             <button className="theme-toggle" onClick={() => document.documentElement.classList.toggle('dark')}>🌓</button>
+            <button className="btn btn-sm btn-outline" style={{ borderRadius:'8px', marginLeft:'12px' }} onClick={onLogout}>🕒 Sign out</button>
           </div>
         </header>
         <div className="page-body">

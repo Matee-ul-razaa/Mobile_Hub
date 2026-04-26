@@ -36,11 +36,14 @@ const Expenses = () => {
   };
 
   return (
-    <>
-      <div className="kpi-grid">
-        <div className="kpi"><div className="kpi-label">Total Expenses (All Time)</div><div className="kpi-value text-red">{fmtKRW(a.totalExp)}</div></div>
-        <div className="kpi"><div className="kpi-label">Month Total ({filterMonth})</div><div className="kpi-value">{fmtKRW(totalMonth)}</div></div>
-        <div className="kpi"><div className="kpi-label">Entries</div><div className="kpi-value">{list.length}</div></div>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom:'20px' }}>
+        <div>
+          <h2 style={{margin:0}}>Expenses</h2>
+          <div className="muted">Shipping, packing, commission, personal costs</div>
+        </div>
+        <div style={{ display:'flex', gap:'8px' }}>
+          <button className="btn btn-sm btn-primary" onClick={() => handleEdit(null)}>+ Add Expense</button>
+        </div>
       </div>
 
       <div style={{ display:'flex', gap:'8px', marginBottom:'16px', flexWrap:'wrap' }}>
@@ -49,31 +52,47 @@ const Expenses = () => {
         <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} style={{ padding:'8px 12px', borderRadius:'10px', border:'1px solid var(--border)', background:'var(--surface-2)' }} />
       </div>
 
-      <div className="card">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Date</th><th>Category</th><th>Note</th><th className="num">Amount</th><th></th></tr>
-            </thead>
-            <tbody>
-              {list.length === 0 ? <tr><td colSpan="5" className="empty">No expenses for this month.</td></tr> :
-                list.map(e => (
+      <div className="grid-split" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">All Expenses — Total {fmtKRW(totalMonth)}</h3></div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>DATE</th><th>CATEGORY</th><th>NOTE</th><th className="num">AMOUNT (KRW)</th><th>ADDED BY</th><th></th></tr>
+              </thead>
+              <tbody>
+                {list.map(e => (
                   <tr key={e._id}>
                     <td>{e.date}</td>
-                    <td><span className="badge badge-gray">{e.category}</span></td>
+                    <td><span className={`badge ${e.category==='Shipping'?'badge-amber':e.category==='Packaging'?'badge-red':'badge-gray'}`}>{e.category}</span></td>
                     <td>{e.note}</td>
                     <td className="num text-red font-bold">{fmtKRW(e.amount)}</td>
+                    <td>—</td>
                     <td>
                       <div className="inline-actions">
-                        <button className="btn btn-sm" onClick={() => handleEdit(e)}>Edit</button>
-                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(e._id)}>Del</button>
+                        <button className="btn btn-sm btn-action" onClick={() => handleEdit(e)}>Edit</button>
+                        <button className="btn btn-sm btn-action text-red" onClick={() => handleDelete(e._id)}>Del</button>
                       </div>
                     </td>
                   </tr>
-                ))
-              }
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">By Category</h3></div>
+          <div className="nav-list" style={{ marginTop:'10px' }}>
+            {Object.entries(
+              list.reduce((acc, x) => { acc[x.category] = (acc[x.category]||0) + x.amount; return acc; }, {})
+            ).map(([cat, val]) => (
+              <div key={cat} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--border)', fontSize:'13px' }}>
+                <span className="muted">{cat}</span>
+                <span className="font-bold">{fmtKRW(val)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -40,14 +40,35 @@ const Inventory = () => {
 
   return (
     <>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom:'20px' }}>
+        <div>
+          <h2 style={{margin:0}}>Inventory</h2>
+          <div className="muted">Stock of mobile phones in hand</div>
+        </div>
+        <div style={{ display:'flex', gap:'8px' }}>
+          <button className="btn btn-sm btn-outline">⬇️ Template</button>
+          <button className="btn btn-sm btn-outline">⬆️ Export Excel</button>
+          <button className="btn btn-sm btn-outline">⬇️ Import Excel</button>
+          <button className="btn btn-sm btn-primary" onClick={() => handleEdit(null)}>+ Add Item</button>
+        </div>
+      </div>
+
       <div className="kpi-grid">
-        <div className="kpi"><div className="kpi-label">Stock Value (Cost)</div><div className="kpi-value brand">{fmtKRW(a.invValue)}</div><div className="kpi-sub">Total tied up capital</div></div>
-        <div className="kpi"><div className="kpi-label">Units Available</div><div className="kpi-value">{a.invUnits}</div><div className="kpi-sub">Across {data.inventory.length} models</div></div>
-        <div className="kpi"><div className="kpi-label">Total Sold</div><div className="kpi-value text-green">{data.inventory.reduce((acc,x)=>acc+(x.soldQty||0),0)}</div><div className="kpi-sub">Units moved lifetime</div></div>
+        <div className="kpi">
+           <div className="kpi-label">TOTAL ITEMS</div>
+           <div className="kpi-value">{data.inventory.length}</div>
+        </div>
+        <div className="kpi">
+           <div className="kpi-label">UNITS IN STOCK</div>
+           <div className="kpi-value text-blue">{a.invUnits}</div>
+        </div>
+        <div className="kpi">
+           <div className="kpi-label">INVENTORY VALUE</div>
+           <div className="kpi-value text-green">{fmtKRW(a.invValue)}</div>
+        </div>
       </div>
 
       <div style={{ display:'flex', gap:'8px', marginBottom:'16px', flexWrap:'wrap' }}>
-        <button className="btn btn-primary" onClick={() => handleEdit(null)}>+ Add Item</button>
         <div className="search-wrap" style={{ flex:1 }}>
           <input type="text" placeholder="Search models, brands, SKU..." value={search} onChange={e=>setSearch(e.target.value)} />
         </div>
@@ -57,23 +78,25 @@ const Inventory = () => {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Model</th><th>Brand</th><th>SKU</th><th className="num">Qty</th><th className="num">Sold</th><th className="num">In Stock</th><th className="num">Cost Each</th><th className="num">Stock Value</th><th></th></tr>
+              <tr><th>MODEL</th><th className="num">BOUGHT</th><th className="num">SOLD</th><th className="num">IN STOCK</th><th className="num">COST/UNIT</th><th className="num">STOCK VALUE</th><th>NOTES</th><th></th></tr>
             </thead>
             <tbody>
               {filtered.map(i => (
                 <tr key={i._id}>
-                  <td><strong>{i.model}</strong><div className="muted" style={{fontSize:'11px'}}>{i.notes}</div></td>
-                  <td>{i.brand}</td>
-                  <td><code style={{fontSize:'11px'}}>{i.sku}</code></td>
+                  <td>
+                    <strong>{i.model}</strong>
+                    <div className="muted" style={{fontSize:'10px'}}>{i.brand} {i.sku ? '· '+i.sku : ''}</div>
+                  </td>
                   <td className="num">{i.qty}</td>
                   <td className="num">{i.soldQty}</td>
-                  <td className={`num ${i.qty-i.soldQty <= 2 ? 'text-red font-bold' : ''}`}>{i.qty - i.soldQty}</td>
+                  <td className={`num ${i.qty-i.soldQty <= 2 ? 'text-red font-bold' : 'text-blue'}`}>{i.qty - i.soldQty}</td>
                   <td className="num">{fmtKRW(i.costPerUnit)}</td>
                   <td className="num">{fmtKRW((i.qty - i.soldQty) * i.costPerUnit)}</td>
+                  <td><span className="muted" style={{fontSize:'12px'}}>{i.notes}</span></td>
                   <td>
                     <div className="inline-actions">
-                      <button className="btn btn-sm" onClick={() => handleEdit(i)}>Edit</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(i._id)}>Del</button>
+                      <button className="btn btn-sm btn-action" onClick={() => handleEdit(i)}>Edit</button>
+                      <button className="btn btn-sm btn-action text-red" onClick={() => handleDelete(i._id)}>Del</button>
                     </div>
                   </td>
                 </tr>
