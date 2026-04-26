@@ -104,16 +104,24 @@ router.post('/auth/login', async (req, res) => {
   if (!user || !password) return res.status(400).json({ error: 'Username and password required' });
   try {
     let setting = await Setting.findOne();
-    if (!setting) {
-      setting = await Setting.create({
-        users: {
-          nadeem: { name: 'Nadeem', role: 'Admin', pwdHash: hashPwd('admin') },
-          bilawal: { name: 'Bilawal', role: 'Admin', pwdHash: hashPwd('admin') }
-        }
-      });
+    
+    // If no settings or no users, create/update with defaults
+    if (!setting || !setting.users || setting.users.size === 0) {
+      const defaults = {
+        nadeem: { name: 'Nadeem', role: 'Admin', pwdHash: hashPwd('admin') },
+        bilawal: { name: 'Bilawal', role: 'Admin', pwdHash: hashPwd('admin') }
+      };
+      if (!setting) {
+        setting = await Setting.create({ users: defaults });
+      } else {
+        setting.users = defaults;
+        await setting.save();
+      }
     }
+
     const userData = setting.users.get(user);
-    if (!userData) return res.status(404).json({ error: 'User not found' });
+    if (!userData) return res.status(404).json({ error: 'User profile not found. Please reset settings.' });
+    
     if (hashPwd(password) === userData.pwdHash) {
       res.json({ success: true, user: userData });
     } else {
