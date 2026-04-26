@@ -1,77 +1,50 @@
 import React, { useState } from 'react';
 import { useData } from '../DataContext';
-import { fmtKRW, agg, todayISO, ym } from '../utils';
-import { poster, putter, deleter } from '../api';
+import { fmtKRW, agg } from '../utils';
 
 const Expenses = () => {
-  const { data, loadAll } = useData();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
-  const [filterMonth, setFilterMonth] = useState(ym());
+  const { data, addExpense, updateExpense, deleteExpense } = useData();
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   const a = agg(data);
-  const list = data.expenses.filter(e => ym(e.date) === filterMonth);
-  const totalMonth = list.reduce((acc,x)=>acc+x.amount, 0);
-
-  const handleEdit = (exp) => {
-    setEditData(exp || { date: todayISO(), category: 'Office Rent', amount: 0, note: '' });
-    setModalOpen(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      if (editData._id) await putter(`/expenses/${editData._id}`, editData);
-      else await poster('/expenses', editData);
-      setModalOpen(false);
-      loadAll();
-    } catch (err) { alert(err.message); }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete expense entry?')) return;
-    try {
-      await deleter(`/expenses/${id}`);
-      loadAll();
-    } catch (err) { alert(err.message); }
-  };
+  const byCat = {};
+  data.expenses.forEach(e => byCat[e.category] = (byCat[e.category] || 0) + e.amount);
 
   return (
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom:'20px' }}>
-        <div>
-          <h2 style={{margin:0}}>Expenses</h2>
-          <div className="muted">Shipping, packing, commission, personal costs</div>
-        </div>
-        <div style={{ display:'flex', gap:'8px' }}>
-          <button className="btn btn-sm btn-primary" onClick={() => handleEdit(null)}>+ Add Expense</button>
+    <div>
+      <div className="page-header">
+        <h2 className="page-title">Operational Expenses</h2>
+        <div className="page-actions">
+          <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Add Expense</button>
         </div>
       </div>
 
-      <div style={{ display:'flex', gap:'8px', marginBottom:'16px', flexWrap:'wrap' }}>
-        <button className="btn btn-primary" onClick={() => handleEdit(null)}>+ Create Expense</button>
-        <div style={{ flex:1 }} />
-        <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} style={{ padding:'8px 12px', borderRadius:'10px', border:'1px solid var(--border)', background:'var(--surface-2)' }} />
-      </div>
-
-      <div className="grid-split" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px' }}>
-        <div className="card">
-          <div className="card-header"><h3 className="card-title">All Expenses — Total {fmtKRW(totalMonth)}</h3></div>
+      <div className="chart-grid">
+        <div className="card" style={{ flex: 2 }}>
+          <div className="card-header"><h3 className="card-title">All Expenses ({fmtKRW(a.totalExp)})</h3></div>
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>DATE</th><th>CATEGORY</th><th>NOTE</th><th className="num">AMOUNT (KRW)</th><th>ADDED BY</th><th></th></tr>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Note</th>
+                  <th className="num">Amount</th>
+                  <th>Actions</th>
+                </tr>
               </thead>
               <tbody>
-                {list.map(e => (
+                {[...data.expenses].reverse().map(e => (
                   <tr key={e._id}>
                     <td>{e.date}</td>
-                    <td><span className={`badge ${e.category==='Shipping'?'badge-amber':e.category==='Packaging'?'badge-red':'badge-gray'}`}>{e.category}</span></td>
+                    <td><span className="badge badge-amber">{e.category}</span></td>
                     <td>{e.note}</td>
-                    <td className="num text-red font-bold">{fmtKRW(e.amount)}</td>
-                    <td>—</td>
+                    <td className="num text-red"><strong>{fmtKRW(e.amount)}</strong></td>
                     <td>
                       <div className="inline-actions">
-                        <button className="btn btn-sm btn-action" onClick={() => handleEdit(e)}>Edit</button>
-                        <button className="btn btn-sm btn-action text-red" onClick={() => handleDelete(e._id)}>Del</button>
+                        <button className="btn btn-sm" onClick={() => { setEditingItem(e); setShowModal(true); }}>Edit</button>
+                        <button className="btn btn-sm btn-danger" onClick={() => deleteExpense(e._id)}>Del</button>
                       </div>
                     </td>
                   </tr>
@@ -81,50 +54,58 @@ const Expenses = () => {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card" style={{ flex: 1 }}>
           <div className="card-header"><h3 className="card-title">By Category</h3></div>
-          <div className="nav-list" style={{ marginTop:'10px' }}>
-            {Object.entries(
-              list.reduce((acc, x) => { acc[x.category] = (acc[x.category]||0) + x.amount; return acc; }, {})
-            ).map(([cat, val]) => (
-              <div key={cat} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--border)', fontSize:'13px' }}>
-                <span className="muted">{cat}</span>
-                <span className="font-bold">{fmtKRW(val)}</span>
+          <div className="cat-list">
+            {Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat, val]) => (
+              <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                <span>{cat}</span>
+                <strong>{fmtKRW(val)}</strong>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {modalOpen && (
-        <div className="modal-bg show">
-          <div className="modal">
-            <h3>{editData._id ? 'Edit' : 'Create'} Expense</h3>
-            <div className="form-row-2">
-              <div className="form-row"><label>Date *</label><input type="date" value={editData.date} onChange={e=>setEditData({...editData, date:e.target.value})} /></div>
-              <div className="form-row"><label>Category</label>
-                <select value={editData.category} onChange={e=>setEditData({...editData, category:e.target.value})}>
-                  <option>Office Rent</option>
-                  <option>Electricity / Utilities</option>
-                  <option>Shipping / Customs</option>
-                  <option>Marketing</option>
-                  <option>Travel / Food</option>
-                  <option>Taxes</option>
-                  <option>Wages / Commissions</option>
-                  <option>Other</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-row"><label>Amount (KRW) *</label><input type="number" value={editData.amount} onChange={e=>setEditData({...editData, amount:Number(e.target.value)})} /></div>
-            <div className="form-row"><label>Note</label><textarea value={editData.note} onChange={e=>setEditData({...editData, note:e.target.value})} /></div>
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>Save</button>
-            </div>
-          </div>
-        </div>
+      {showModal && (
+        <ExpenseModal 
+          item={editingItem} 
+          onClose={() => setShowModal(false)}
+          onSave={async (obj) => {
+            if (editingItem) await updateExpense(editingItem._id, obj);
+            else await addExpense(obj);
+            setShowModal(false);
+          }}
+        />
       )}
-    </>
+    </div>
   );
 };
+
+const ExpenseModal = ({ item, onClose, onSave }) => {
+  const [form, setForm] = useState(item || { date: new Date().toISOString().slice(0,10), category: 'Shipping', amount: 0, note: '' });
+  const cats = ['Shipping','Packaging','Commission','Customs','Transport','Office','Salary','Other'];
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h3>{item ? 'Edit' : 'Add'} Expense</h3>
+        <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
+        <div className="form-row">
+          <label>Category</label>
+          <select value={form.category} onChange={e=>setForm({...form, category:e.target.value})}>
+            {cats.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="form-row"><label>Amount (KRW) *</label><input type="number" value={form.amount} onChange={e=>setForm({...form, amount:Number(e.target.value)})} /></div>
+        <div className="form-row"><label>Note</label><textarea value={form.note} onChange={e=>setForm({...form, note:e.target.value})} /></div>
+        <div className="modal-actions">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={() => onSave(form)}>Save Expense</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default Expenses;

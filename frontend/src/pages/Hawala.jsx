@@ -1,79 +1,78 @@
 import React, { useState } from 'react';
 import { useData } from '../DataContext';
-import { fmtKRW, fmtNum, agg, todayISO, uid } from '../utils';
-import { poster, putter, deleter } from '../api';
+import { fmtKRW, fmtNum, agg } from '../utils';
 
 const Hawala = () => {
-  const { data, loadAll } = useData();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
-  const [search, setSearch] = useState('');
+  const { data, addHawala, updateHawala, deleteHawala } = useData();
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   const a = agg(data);
-  const filtered = data.hawala.filter(h => 
-    h.buyer?.toLowerCase().includes(search.toLowerCase()) || 
-    h.receiverName?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleEdit = (haw) => {
-    setEditData(haw || { date: todayISO(), amountKRW: 0, amountPKR: 0, discountKRW: 0, buyer: '', receiverName: '', receiverPhone: '', receivedBy: '', note: '' });
-    setModalOpen(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      if (editData._id) await putter(`/hawala/${editData._id}`, editData);
-      else await poster('/hawala', editData);
-      setModalOpen(false);
-      loadAll();
-    } catch (err) { alert(err.message); }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete Fazi Cash entry?')) return;
-    try {
-      await deleter(`/hawala/${id}`);
-      loadAll();
-    } catch (err) { alert(err.message); }
-  };
 
   return (
-    <>
-      <div className="kpi-grid">
-        <div className="kpi"><div className="kpi-label">Total KRW Received</div><div className="kpi-value pos">{fmtKRW(a.hawalaIn)}</div><div className="kpi-sub">Actual working cash added</div></div>
-        <div className="kpi"><div className="kpi-label">Total PKR Settled</div><div className="kpi-value">₨{fmtNum(a.hawalaPKR)}</div><div className="kpi-sub">Paid by buyers in PK</div></div>
-        <div className="kpi"><div className="kpi-label">Discounts Given</div><div className="kpi-value text-red">{fmtKRW(a.hawalaDiscount)}</div><div className="kpi-sub">Excluded from revenue</div></div>
+    <div>
+      <div className="page-header">
+        <h2 className="page-title">Fazi Cash (Hawala)</h2>
+        <div className="page-actions">
+          <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Record Fazi Cash</button>
+        </div>
       </div>
 
-      <div style={{ display:'flex', gap:'8px', marginBottom:'16px', flexWrap:'wrap' }}>
-        <button className="btn btn-primary" onClick={() => handleEdit(null)}>+ New Fazi Cash Entry</button>
-        <div className="search-wrap" style={{ flex:1 }}>
-          <input type="text" placeholder="Search buyers, receivers..." value={search} onChange={e=>setSearch(e.target.value)} />
+      <div className="kpi-grid">
+        <div className="kpi">
+          <div className="kpi-label">Total Received (KRW)</div>
+          <div className="kpi-value pos">{fmtKRW(a.hawalaIn)}</div>
+          <div className="kpi-sub">Earnings from Pakistani sales</div>
         </div>
+        <div className="kpi">
+          <div className="kpi-label">Total Settled (PKR)</div>
+          <div className="kpi-value">₨{fmtNum(a.hawalaPKR)}</div>
+          <div className="kpi-sub">Amount paid in Pakistan</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">Total Discount</div>
+          <div className="kpi-value neg">{fmtKRW(a.hawalaDiscount)}</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">Transactions</div>
+          <div className="kpi-value">{data.hawala.length}</div>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: '14px' }}>
+        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-3)', lineBreak: '1.5' }}>
+          <strong>How this works:</strong> The buyer in Pakistan pays in PKR. Their Korea contact hands you KRW locally. 
+          Record both here. If you gave a discount on the transfer, enter it to keep your profit tracking accurate.
+        </p>
       </div>
 
       <div className="card">
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Date</th><th>Buyer / Receiver</th><th className="num">PKR Settled</th><th className="num">KRW Received</th><th className="num">Discount</th><th>Notes</th><th></th></tr>
+              <tr>
+                <th>Date</th>
+                <th>Buyer (PK)</th>
+                <th>From (KR)</th>
+                <th className="num">PKR Amount</th>
+                <th className="num">KRW Received</th>
+                <th className="num">Discount</th>
+                <th>Actions</th>
+              </tr>
             </thead>
             <tbody>
-              {filtered.map(h => (
+              {data.hawala.map(h => (
                 <tr key={h._id}>
                   <td>{h.date}</td>
-                  <td>
-                    <strong>{h.buyer}</strong>
-                    <div className="muted" style={{fontSize:'11px'}}>via {h.receiverName} ({h.receiverPhone})</div>
-                  </td>
+                  <td><strong>{h.buyer}</strong></td>
+                  <td>{h.receiverName || '—'}</td>
                   <td className="num">₨{fmtNum(h.amountPKR)}</td>
-                  <td className="num text-green font-bold">{fmtKRW(h.amountKRW)}</td>
-                  <td className="num text-red">{fmtKRW(h.discountKRW)}</td>
-                  <td style={{ fontSize: '11px' }}>{h.note}</td>
+                  <td className="num text-green"><strong>+{fmtKRW(h.amountKRW)}</strong></td>
+                  <td className="num text-red">{h.discountKRW ? `−${fmtKRW(h.discountKRW)}` : '—'}</td>
                   <td>
                     <div className="inline-actions">
-                      <button className="btn btn-sm" onClick={() => handleEdit(h)}>Edit</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(h._id)}>Del</button>
+                      <button className="btn btn-sm" onClick={() => { setEditingItem(h); setShowModal(true); }}>Edit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => deleteHawala(h._id)}>Del</button>
                     </div>
                   </td>
                 </tr>
@@ -83,34 +82,62 @@ const Hawala = () => {
         </div>
       </div>
 
-      {modalOpen && (
-        <div className="modal-bg show">
-          <div className="modal">
-            <h3>{editData._id ? 'Edit' : 'New'} Fazi Cash Entry</h3>
-            <div className="form-row-2">
-              <div className="form-row"><label>Date *</label><input type="date" value={editData.date} onChange={e=>setEditData({...editData, date:e.target.value})} /></div>
-              <div className="form-row"><label>Buyer Name *</label><input value={editData.buyer} onChange={e=>setEditData({...editData, buyer:e.target.value})} /></div>
-            </div>
-            <div className="form-row-2">
-              <div className="form-row"><label>Receiver Name</label><input value={editData.receiverName} onChange={e=>setEditData({...editData, receiverName:e.target.value})} /></div>
-              <div className="form-row"><label>Receiver Phone</label><input value={editData.receiverPhone} onChange={e=>setEditData({...editData, receiverPhone:e.target.value})} /></div>
-            </div>
-            <div style={{ background:'var(--surface-2)', padding:'12px', borderRadius:'8px', marginBottom:'12px' }}>
-              <div className="form-row-2">
-                <div className="form-row"><label>Amount Settled (PKR) *</label><input type="number" value={editData.amountPKR} onChange={e=>setEditData({...editData, amountPKR:Number(e.target.value)})} /></div>
-                <div className="form-row"><label>Amount Received (KRW) *</label><input type="number" value={editData.amountKRW} onChange={e=>setEditData({...editData, amountKRW:Number(e.target.value)})} /></div>
-              </div>
-              <div className="form-row"><label>Discount (KRW)</label><input type="number" value={editData.discountKRW} onChange={e=>setEditData({...editData, discountKRW:Number(e.target.value)})} /></div>
-            </div>
-            <div className="form-row"><label>Notes</label><textarea value={editData.note} onChange={e=>setEditData({...editData, note:e.target.value})} /></div>
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>Save</button>
-            </div>
-          </div>
-        </div>
+      {showModal && (
+        <HawalaModal 
+          item={editingItem} 
+          sales={data.sales}
+          onClose={() => setShowModal(false)}
+          onSave={async (obj) => {
+            if (editingItem) await updateHawala(editingItem._id, obj);
+            else await addHawala(obj);
+            setShowModal(false);
+          }}
+        />
       )}
-    </>
+    </div>
   );
 };
+
+const HawalaModal = ({ item, sales, onClose, onSave }) => {
+  const [form, setForm] = useState(item || { 
+    date: new Date().toISOString().slice(0,10), 
+    buyer: '', 
+    amountPKR: 0, 
+    amountKRW: 0, 
+    discountKRW: 0, 
+    receiverName: '', 
+    note: '', 
+    linkedSaleId: '' 
+  });
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h3>{item ? 'Edit' : 'Record'} Fazi Cash</h3>
+        <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
+        <div className="form-row"><label>Buyer (Pakistan) *</label><input value={form.buyer} onChange={e=>setForm({...form, buyer:e.target.value})} /></div>
+        <div className="form-row">
+          <label>Link to Sale (marks as received)</label>
+          <select value={form.linkedSaleId} onChange={e=>setForm({...form, linkedSaleId:e.target.value})}>
+            <option value="">— none —</option>
+            {sales.filter(s => (s.qty*s.pricePerUnit) > (s.received||0)).map(s => (
+              <option key={s._id} value={s._id}>{s.date} · {s.buyer} · {fmtKRW(s.qty*s.pricePerUnit)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="form-row-2">
+          <div className="form-row"><label>PKR Amount</label><input type="number" value={form.amountPKR} onChange={e=>setForm({...form, amountPKR:Number(e.target.value)})} /></div>
+          <div className="form-row"><label>KRW Received *</label><input type="number" value={form.amountKRW} onChange={e=>setForm({...form, amountKRW:Number(e.target.value)})} /></div>
+        </div>
+        <div className="form-row"><label>Discount Given (KRW)</label><input type="number" value={form.discountKRW} onChange={e=>setForm({...form, discountKRW:Number(e.target.value)})} /></div>
+        <div className="form-row"><label>Note</label><textarea value={form.note} onChange={e=>setForm({...form, note:e.target.value})} /></div>
+        <div className="modal-actions">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={() => onSave(form)}>Save Transaction</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default Hawala;

@@ -1,76 +1,87 @@
 import React, { useState } from 'react';
 import { useData } from '../DataContext';
-import { fmtKRW, agg, todayISO } from '../utils';
-import { poster, putter, deleter } from '../api';
+import { fmtKRW, agg } from '../utils';
+import * as XLSX from 'xlsx';
 
 const Inventory = () => {
-  const { data, loadAll } = useData();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
-  const [search, setSearch] = useState('');
+  const { data, addInventory, updateInventory, deleteInventory } = useData();
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   const a = agg(data);
-  const filtered = data.inventory.filter(i => 
-    i.model.toLowerCase().includes(search.toLowerCase()) || 
-    i.brand?.toLowerCase().includes(search.toLowerCase()) ||
-    i.sku?.toLowerCase().includes(search.toLowerCase())
-  );
 
-  const handleEdit = (item) => {
-    setEditData(item || { model: '', brand: '', sku: '', qty: 0, soldQty: 0, costPerUnit: 0, notes: '' });
-    setModalOpen(true);
+  const handleExport = () => {
+    const rows = data.inventory.map(x => ({
+      Model: x.model,
+      Brand: x.brand || '',
+      SKU: x.sku || '',
+      Bought: x.qty,
+      Sold: x.soldQty,
+      Remaining: Math.max(0, x.qty - x.soldQty),
+      CostPerUnit: x.costPerUnit,
+      Value: Math.max(0, x.qty - x.soldQty) * x.costPerUnit,
+      Notes: x.notes || ''
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+    XLSX.writeFile(wb, `inventory-export-${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
-  const handleSave = async () => {
-    try {
-      if (editData._id) await putter(`/inventory/${editData._id}`, editData);
-      else await poster('/inventory', editData);
-      setModalOpen(false);
-      loadAll();
-    } catch (err) { alert(err.message); }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete item?')) return;
-    try {
-      await deleter(`/inventory/${id}`);
-      loadAll();
-    } catch (err) { alert(err.message); }
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const bstr = evt.target.result;
+      const wb = XLSX.read(bstr, { type: 'binary' });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const items = XLSX.utils.sheet_to_json(ws);
+      
+      for (const item of items) {
+        if (item.Model) {
+          await addInventory({
+            model: item.Model,
+            brand: item.Brand || '',
+            sku: item.SKU || '',
+            qty: Number(item.Bought) || 0,
+            costPerUnit: Number(item.CostPerUnit) || 0,
+            notes: item.Notes || ''
+          });
+        }
+      }
+      alert('Import successful!');
+    };
+    reader.readAsBinaryString(file);
   };
 
   return (
-    <>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom:'20px' }}>
-        <div>
-          <h2 style={{margin:0}}>Inventory</h2>
-          <div className="muted">Stock of mobile phones in hand</div>
-        </div>
-        <div style={{ display:'flex', gap:'8px' }}>
-          <button className="btn btn-sm btn-outline">⬇️ Template</button>
-          <button className="btn btn-sm btn-outline">⬆️ Export Excel</button>
-          <button className="btn btn-sm btn-outline">⬇️ Import Excel</button>
-          <button className="btn btn-sm btn-primary" onClick={() => handleEdit(null)}>+ Add Item</button>
+    <div>
+      <div className="page-header">
+        <h2 className="page-title">Inventory Management</h2>
+        <div className="page-actions">
+          <button className="btn" onClick={handleExport}>⬇ Export Excel</button>
+          <label className="btn" style={{ cursor: 'pointer' }}>
+            ⬆ Import Excel
+            <input type="file" style={{ display: 'none' }} onChange={handleImport} accept=".xlsx,.xls" />
+          </label>
+          <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Add Item</button>
         </div>
       </div>
 
       <div className="kpi-grid">
         <div className="kpi">
-           <div className="kpi-label">TOTAL ITEMS</div>
-           <div className="kpi-value">{data.inventory.length}</div>
+          <div className="kpi-label">Total Items</div>
+          <div className="kpi-value">{data.inventory.length}</div>
         </div>
         <div className="kpi">
-           <div className="kpi-label">UNITS IN STOCK</div>
-           <div className="kpi-value text-blue">{a.invUnits}</div>
+          <div className="kpi-label">Units In Stock</div>
+          <div className="kpi-value brand">{a.invUnits}</div>
         </div>
         <div className="kpi">
-           <div className="kpi-label">INVENTORY VALUE</div>
-           <div className="kpi-value text-green">{fmtKRW(a.invValue)}</div>
-        </div>
-      </div>
-
-      <div style={{ display:'flex', gap:'8px', marginBottom:'16px', flexWrap:'wrap' }}>
-        <div className="search-wrap" style={{ flex:1 }}>
-          <input type="text" placeholder="Search models, brands, SKU..." value={search} onChange={e=>setSearch(e.target.value)} />
+          <div className="kpi-label">Inventory Value</div>
+          <div className="kpi-value">{fmtKRW(a.invValue)}</div>
         </div>
       </div>
 
@@ -78,25 +89,32 @@ const Inventory = () => {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>MODEL</th><th className="num">BOUGHT</th><th className="num">SOLD</th><th className="num">IN STOCK</th><th className="num">COST/UNIT</th><th className="num">STOCK VALUE</th><th>NOTES</th><th></th></tr>
+              <tr>
+                <th>Model</th>
+                <th className="num">Bought</th>
+                <th className="num">Sold</th>
+                <th className="num">Stock</th>
+                <th className="num">Cost/Unit</th>
+                <th className="num">Value</th>
+                <th>Actions</th>
+              </tr>
             </thead>
             <tbody>
-              {filtered.map(i => (
-                <tr key={i._id}>
+              {data.inventory.map(item => (
+                <tr key={item._id}>
                   <td>
-                    <strong>{i.model}</strong>
-                    <div className="muted" style={{fontSize:'10px'}}>{i.brand} {i.sku ? '· '+i.sku : ''}</div>
+                    <strong>{item.model}</strong>
+                    <div className="muted" style={{ fontSize: '11px' }}>{item.brand} {item.sku && `· ${item.sku}`}</div>
                   </td>
-                  <td className="num">{i.qty}</td>
-                  <td className="num">{i.soldQty}</td>
-                  <td className={`num ${i.qty-i.soldQty <= 2 ? 'text-red font-bold' : 'text-blue'}`}>{i.qty - i.soldQty}</td>
-                  <td className="num">{fmtKRW(i.costPerUnit)}</td>
-                  <td className="num">{fmtKRW((i.qty - i.soldQty) * i.costPerUnit)}</td>
-                  <td><span className="muted" style={{fontSize:'12px'}}>{i.notes}</span></td>
+                  <td className="num">{item.qty}</td>
+                  <td className="num">{item.soldQty || 0}</td>
+                  <td className="num"><strong>{item.qty - (item.soldQty || 0)}</strong></td>
+                  <td className="num">{fmtKRW(item.costPerUnit)}</td>
+                  <td className="num">{fmtKRW((item.qty - (item.soldQty || 0)) * item.costPerUnit)}</td>
                   <td>
                     <div className="inline-actions">
-                      <button className="btn btn-sm btn-action" onClick={() => handleEdit(i)}>Edit</button>
-                      <button className="btn btn-sm btn-action text-red" onClick={() => handleDelete(i._id)}>Del</button>
+                      <button className="btn btn-sm" onClick={() => { setEditingItem(item); setShowModal(true); }}>Edit</button>
+                      <button className="btn btn-sm btn-danger" onClick={() => deleteInventory(item._id)}>Del</button>
                     </div>
                   </td>
                 </tr>
@@ -106,29 +124,45 @@ const Inventory = () => {
         </div>
       </div>
 
-      {modalOpen && (
-        <div className="modal-bg show">
-          <div className="modal">
-            <h3>{editData._id ? 'Edit' : 'Add'} Inventory Item</h3>
-            <div className="form-row"><label>Model Name *</label><input value={editData.model} onChange={e=>setEditData({...editData, model:e.target.value})} /></div>
-            <div className="form-row-2">
-              <div className="form-row"><label>Brand</label><input value={editData.brand} onChange={e=>setEditData({...editData, brand:e.target.value})} /></div>
-              <div className="form-row"><label>SKU (optional)</label><input value={editData.sku} onChange={e=>setEditData({...editData, sku:e.target.value})} /></div>
-            </div>
-            <div className="form-row-2">
-              <div className="form-row"><label>Total Qty Purchased</label><input type="number" value={editData.qty} onChange={e=>setEditData({...editData, qty:Number(e.target.value)})} /></div>
-              <div className="form-row"><label>Sold Qty (auto-updates)</label><input type="number" value={editData.soldQty} onChange={e=>setEditData({...editData, soldQty:Number(e.target.value)})} /></div>
-            </div>
-            <div className="form-row"><label>Cost Per Unit (KRW) *</label><input type="number" value={editData.costPerUnit} onChange={e=>setEditData({...editData, costPerUnit:Number(e.target.value)})} /></div>
-            <div className="form-row"><label>Notes</label><textarea value={editData.notes} onChange={e=>setEditData({...editData, notes:e.target.value})} /></div>
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>Save</button>
-            </div>
-          </div>
-        </div>
+      {showModal && (
+        <InventoryModal 
+          item={editingItem} 
+          onClose={() => setShowModal(false)}
+          onSave={async (obj) => {
+            if (editingItem) await updateInventory(editingItem._id, obj);
+            else await addInventory(obj);
+            setShowModal(false);
+          }}
+        />
       )}
-    </>
+    </div>
   );
 };
+
+const InventoryModal = ({ item, onClose, onSave }) => {
+  const [form, setForm] = useState(item || { model: '', brand: '', sku: '', qty: 0, costPerUnit: 0, notes: '' });
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h3>{item ? 'Edit' : 'Add'} Inventory Item</h3>
+        <div className="form-row"><label>Model *</label><input value={form.model} onChange={e=>setForm({...form, model:e.target.value})} /></div>
+        <div className="form-row-2">
+          <div className="form-row"><label>Brand</label><input value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} /></div>
+          <div className="form-row"><label>SKU</label><input value={form.sku} onChange={e=>setForm({...form, sku:e.target.value})} /></div>
+        </div>
+        <div className="form-row-2">
+          <div className="form-row"><label>Quantity</label><input type="number" value={form.qty} onChange={e=>setForm({...form, qty:Number(e.target.value)})} /></div>
+          <div className="form-row"><label>Cost (KRW)</label><input type="number" value={form.costPerUnit} onChange={e=>setForm({...form, costPerUnit:Number(e.target.value)})} /></div>
+        </div>
+        <div className="form-row"><label>Notes</label><textarea value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} /></div>
+        <div className="modal-actions">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={() => onSave(form)}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default Inventory;
