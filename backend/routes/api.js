@@ -155,4 +155,43 @@ router.put('/settings', async (req, res) => {
   }
 });
 
+// Bulk Import and Reset
+router.post('/bulk-import', async (req, res) => {
+  const { table, data } = req.body;
+  try {
+    let Model;
+    if (table === 'inventory') Model = Inventory;
+    else if (table === 'sales') Model = Sale;
+    else if (table === 'expenses') Model = Expense;
+    else if (table === 'cashflow') Model = Cashflow;
+    else if (table === 'hawala') Model = Hawala;
+    else if (table === 'investors') Model = Investor;
+    else if (table === 'payouts') Model = Payout;
+    
+    if (!Model) return res.status(400).json({ error: 'Invalid table' });
+    
+    const saved = await Model.insertMany(data);
+    res.json({ message: `Imported ${saved.length} items`, count: saved.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/reset-all', async (req, res) => {
+  try {
+    await Promise.all([
+      Inventory.deleteMany({}),
+      Sale.deleteMany({}),
+      Expense.deleteMany({}),
+      Cashflow.deleteMany({}),
+      Hawala.deleteMany({}),
+      Investor.deleteMany({}),
+      Payout.deleteMany({}),
+    ]);
+    res.json({ message: 'All data deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

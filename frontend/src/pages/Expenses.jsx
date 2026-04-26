@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, todayISO } from '../utils';
 import { poster, putter, deleter } from '../api';
+import * as XLSX from 'xlsx';
 
 const EXP_CATS = ['Shipping','Packaging','Commission','Customs','Transport','Office','Personal','Salary','Other'];
 
@@ -9,10 +10,16 @@ const Expenses = () => {
   const { data, loadAll } = useData();
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [search, setSearch] = useState('');
 
-  const total = data.expenses.reduce((a,x) => a+x.amount, 0);
+  const filtered = data.expenses.filter(e => 
+    e.category.toLowerCase().includes(search.toLowerCase()) || 
+    (e.note||'').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const total = filtered.reduce((a,x) => a+x.amount, 0);
   const byCat = {};
-  data.expenses.forEach(e => byCat[e.category] = (byCat[e.category]||0) + e.amount);
+  filtered.forEach(e => byCat[e.category] = (byCat[e.category]||0) + e.amount);
 
   const handleEdit = (e) => {
     setEditData(e || { date:todayISO(), category:'Shipping', amount:0, note:'' });
@@ -40,12 +47,27 @@ const Expenses = () => {
     } catch (err) { alert(err.message); }
   };
 
-  const sortedExpenses = [...data.expenses].sort((a,b) => b.date.localeCompare(a.date));
+  const exportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(data.expenses);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+    XLSX.writeFile(workbook, `MobileHub_Expenses_${todayISO()}.xlsx`);
+  };
+
+  const sortedExpenses = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
 
   return (
     <>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+      <div className="card" style={{ marginBottom: '14px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <input 
+          className="search-input" 
+          placeholder="Search expenses..." 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+          style={{ flex: 1, minWidth: '200px' }}
+        />
         <button className="btn btn-primary" onClick={() => handleEdit(null)}>+ Add Expense</button>
+        <button className="btn" onClick={exportExcel}>💾 Export Excel</button>
       </div>
 
       <div className="chart-grid">
@@ -55,7 +77,7 @@ const Expenses = () => {
             <table>
               <thead><tr><th>Date</th><th>Category</th><th>Note</th><th className="num">Amount (KRW)</th><th></th></tr></thead>
               <tbody>
-                {sortedExpenses.length === 0 ? <tr><td colSpan="5" className="empty">No expenses yet.</td></tr> :
+                {sortedExpenses.length === 0 ? <tr><td colSpan="5" className="empty">No expenses found.</td></tr> :
                   sortedExpenses.map(e => (
                     <tr key={e._id}>
                       <td>{e.date}</td>
@@ -91,7 +113,7 @@ const Expenses = () => {
         <div className="modal-bg show" onClick={(e) => { if(e.target.className.includes('modal-bg')) setModalOpen(false) }}>
           <div className="modal">
             <h3>{editData._id ? 'Edit' : 'Add'} Expense</h3>
-            <div className="form-row-2">
+            <div className="form-rows-2" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>
               <div className="form-row"><label>Date</label><input type="date" value={editData.date} onChange={e => setEditData({...editData, date:e.target.value})} /></div>
               <div className="form-row"><label>Category</label>
                 <select value={editData.category} onChange={e => setEditData({...editData, category:e.target.value})}>

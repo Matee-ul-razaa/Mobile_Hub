@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { DataProvider, useData } from './DataContext';
 import './index.css';
@@ -15,6 +15,18 @@ import Payouts from './pages/Payouts';
 import Settings from './pages/Settings';
 
 const Sidebar = ({ menuOpen, setMenuOpen }) => {
+  const [dark, setDark] = useState(localStorage.getItem('mh_theme') === 'dark');
+
+  useEffect(() => {
+    if(dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('mh_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('mh_theme', 'light');
+    }
+  }, [dark]);
+
   return (
     <>
       <div className={`backdrop ${menuOpen ? 'show' : ''}`} onClick={() => setMenuOpen(false)}></div>
@@ -55,6 +67,11 @@ const Sidebar = ({ menuOpen, setMenuOpen }) => {
             <span className="icon">⚙️</span> Settings / Backup
           </NavLink>
         </nav>
+        <div style={{ marginTop:'auto', paddingTop:'20px', borderTop:'1px solid var(--border)' }}>
+          <button className="btn" style={{ width:'100%', justifyContent:'center' }} onClick={() => setDark(!dark)}>
+            {dark ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
+        </div>
       </aside>
     </>
   );
@@ -62,7 +79,6 @@ const Sidebar = ({ menuOpen, setMenuOpen }) => {
 
 const Layout = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data } = useData();
 
   return (
     <div className="app">
