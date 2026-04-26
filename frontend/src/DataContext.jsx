@@ -13,13 +13,15 @@ export const DataProvider = ({ children }) => {
     investors: [],
     payouts: [],
     ownerInvestment: [],
-    settings: { businessName: 'Mobile Hub', owner: '' }
+    shipments: [],
+    activity: [],
+    settings: { businessName: 'Mobile Hub', owner: '', users: {} }
   });
   const [loading, setLoading] = useState(true);
 
   const loadAll = useCallback(async () => {
     try {
-      const [inv, sls, exp, cf, hw, invs, po, set, own] = await Promise.all([
+      const [inv, sls, exp, cf, hw, invs, po, set, own, shp, act] = await Promise.all([
         fetcher('/inventory'),
         fetcher('/sales'),
         fetcher('/expenses'),
@@ -29,6 +31,8 @@ export const DataProvider = ({ children }) => {
         fetcher('/payouts'),
         fetcher('/settings'),
         fetcher('/owner-investment'),
+        fetcher('/shipments'),
+        fetcher('/activity'),
       ]);
       setData({
         inventory: Array.isArray(inv) ? inv : [],
@@ -39,7 +43,9 @@ export const DataProvider = ({ children }) => {
         investors: Array.isArray(invs) ? invs : [],
         payouts: Array.isArray(po) ? po : [],
         ownerInvestment: Array.isArray(own) ? own : [],
-        settings: set && typeof set === 'object' ? set : { businessName: 'Mobile Hub', owner: '' }
+        shipments: Array.isArray(shp) ? shp : [],
+        activity: Array.isArray(act) ? act : [],
+        settings: set && typeof set === 'object' ? set : { businessName: 'Mobile Hub', owner: '', users: {} }
       });
       setLoading(false);
     } catch (err) {
