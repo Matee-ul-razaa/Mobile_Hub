@@ -4,8 +4,12 @@ import App from './App.jsx'
 import './index.css'
 import 'chart.js/auto'
 
+import { DataProvider } from './DataContext.jsx'
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <DataProvider>
+      <App />
+    </DataProvider>
   </React.StrictMode>,
 )
