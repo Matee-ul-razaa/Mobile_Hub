@@ -44,8 +44,8 @@ const Layout = ({ user, onLogout }) => {
         <div className="sidebar-header">
           <div className="logo-circ">MH</div>
           <div className="logo-txt">
-            <div className="biz-name">{data.settings.businessName}</div>
-            <div className="biz-sub">Business Manager</div>
+            <div className="biz-name">Mobile Hub</div>
+            <div className="biz-sub">Korea ➞ Pakistan Exports</div>
           </div>
         </div>
 
@@ -59,26 +59,20 @@ const Layout = ({ user, onLogout }) => {
         </div>
 
         <nav className="nav-list">
-          <div className="nav-group">Main</div>
           <SidebarLink to="/" label="Dashboard" icon="📊" />
           <SidebarLink to="/inventory" label="Inventory" icon="📦" />
           <SidebarLink to="/sales" label="Sales" icon="🤝" />
           <SidebarLink to="/shipments" label="Shipments" icon="🚢" />
-          
-          <div className="nav-group">Finance</div>
           <SidebarLink to="/expenses" label="Expenses" icon="💸" />
+          <SidebarLink to="/cash-in-out" label="Cash In / Out" icon="💰" />
           <SidebarLink to="/fazi-cash" label="Fazi Cash" icon="🏦" />
-          <SidebarLink to="/capital-profit" label="Capital & Profit" icon="📈" />
-          
-          <div className="nav-group">Partners</div>
           <SidebarLink to="/investors" label="Investors" icon="👥" />
-          <SidebarLink to="/my-investment" label="My Investment" icon="💰" />
-          <SidebarLink to="/payouts" label="Payouts" icon="💳" />
-          
-          <div className="nav-group">System</div>
+          <SidebarLink to="/my-investment" label="My Investment" icon="👤" />
+          <SidebarLink to="/payouts" label="Investor Payouts" icon="💳" />
+          <SidebarLink to="/capital-profit" label="Capital & Profit" icon="📈" />
           <SidebarLink to="/ai-assistant" label="AI Assistant" icon="✨" />
           <SidebarLink to="/activity-log" label="Activity Log" icon="📋" />
-          <SidebarLink to="/settings" label="Settings" icon="⚙️" />
+          <SidebarLink to="/settings" label="Settings / Backup" icon="⚙️" />
         </nav>
       </aside>
 
@@ -97,6 +91,7 @@ const Layout = ({ user, onLogout }) => {
             <Route path="/sales" element={<Sales />} />
             <Route path="/shipments" element={<Shipments />} />
             <Route path="/expenses" element={<Expenses />} />
+            <Route path="/cash-in-out" element={<Hawala />} />
             <Route path="/fazi-cash" element={<Hawala />} />
             <Route path="/capital-profit" element={<CapitalProfit />} />
             <Route path="/investors" element={<Investors />} />

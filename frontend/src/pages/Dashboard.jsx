@@ -71,14 +71,67 @@ const Dashboard = () => {
       )}
 
       <div className="kpi-grid">
-        <div className="kpi"><div className="kpi-label">Cash In Hand</div><div className={`kpi-value ${a.cashInHand>=0?'pos':'neg'}`}>{fmtKRW(a.cashInHand)}</div><div className="kpi-sub">Actual working cash</div></div>
-        <div className="kpi"><div className="kpi-label">Total Capital Pool</div><div className="kpi-value purple">{fmtKRW(a.totalCapitalPool)}</div><div className="kpi-sub">Investments + Retained Profit</div></div>
-        <div className="kpi"><div className="kpi-label">Retained Profit</div><div className="kpi-value pos">{fmtKRW(a.retainedProfit)}</div><div className="kpi-sub">Compounded business growth</div></div>
-        <div className="kpi"><div className="kpi-label">Inventory Value</div><div className="kpi-value brand">{fmtKRW(a.invValue)}</div><div className="kpi-sub">{a.invUnits} units in stock</div></div>
-        <div className="kpi"><div className="kpi-label">Total Sales</div><div className="kpi-value">{fmtKRW(a.salesRev)}</div><div className="kpi-sub">{data.sales.length} shipment(s)</div></div>
-        <div className="kpi"><div className="kpi-label">Pending Receivable</div><div className={`kpi-value ${a.pendingReceivable>0?'neg':''}`}>{fmtKRW(a.pendingReceivable)}</div><div className="kpi-sub">Yet to be collected via Fazi Cash</div></div>
-        <div className="kpi"><div className="kpi-label">Fazi Cash Received</div><div className="kpi-value pos">{fmtKRW(a.hawalaIn)}</div><div className="kpi-sub">₨{fmtNum(a.hawalaPKR)} PKR settled</div></div>
-        <div className="kpi"><div className="kpi-label">Investor Commitment</div><div className="kpi-value">{fmtKRW(a.totalMonthly)}</div><div className="kpi-sub">Total monthly payouts due</div></div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">CASH IN HAND</div>
+          <div className={`kpi-value text-green`}>{fmtKRW(a.cashInHand)}</div>
+          <div className="kpi-sub">Cash In + Fazi Cash – Out – Exp – Payouts</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">INVENTORY VALUE</div>
+          <div className="kpi-value text-blue">{fmtKRW(a.invValue)}</div>
+          <div className="kpi-sub">{a.invUnits} units in stock</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">TOTAL SALES</div>
+          <div className="kpi-value">{fmtKRW(a.salesRev)}</div>
+          <div className="kpi-sub">{data.sales.length} shipment(s)</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">GROSS PROFIT</div>
+          <div className="kpi-value text-green">{fmtKRW(a.grossProfit)}</div>
+          <div className="kpi-sub">Sales – cost of goods</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">NET PROFIT</div>
+          <div className="kpi-value text-green">{fmtKRW(a.netProfit)}</div>
+          <div className="kpi-sub">After expenses</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">PENDING RECEIVABLE</div>
+          <div className="kpi-value text-red">{fmtKRW(a.pendingReceivable)}</div>
+          <div className="kpi-sub">Yet to be collected via Fazi Cash</div>
+        </div>
+
+        <div className="kpi">
+          <div className="kpi-label text-brand">FAZI CASH RECEIVED (KRW)</div>
+          <div className="kpi-value text-teal">{fmtKRW(a.hawalaIn)}</div>
+          <div className="kpi-sub">₨{fmtNum(a.hawalaPKR)} PKR settled</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">TOTAL FAZI CASH DISCOUNT</div>
+          <div className="kpi-value text-red">{fmtKRW(a.hawalaDiscount)}</div>
+          <div className="kpi-sub">Discount given on Fazi Cash</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">TOTAL CAPITAL POOL</div>
+          <div className="kpi-value text-purple">{fmtKRW(a.totalCapitalPool)}</div>
+          <div className="kpi-sub">Initial {fmtKRW(a.totalCapital + a.ownerCapital)} + retained profit</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">RETAINED PROFIT</div>
+          <div className={`kpi-value ${a.retainedProfit >= 0 ? 'text-green' : 'text-red'}`}>{fmtKRW(a.retainedProfit)}</div>
+          <div className="kpi-sub">Profit reinvested in business</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">INVESTOR CAPITAL</div>
+          <div className="kpi-value text-purple">{fmtKRW(a.totalCapital)}</div>
+          <div className="kpi-sub">{data.investors.length} investors · ₨{fmtNum(a.totalCapitalPKR)} paid in PK</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label text-brand">MONTHLY PAYOUT DUE</div>
+          <div className="kpi-value text-blue">{fmtKRW(a.totalMonthly)}</div>
+          <div className="kpi-sub">₨{fmtNum(a.totalMonthlyPKR)}/mo in PK · Total paid: {fmtKRW(a.totalPaid)}</div>
+        </div>
       </div>
 
       <div className="chart-grid">
