@@ -2,6 +2,8 @@ export const fmtKRW = n => '₩' + (Number(n)||0).toLocaleString('en-US', {maxim
 export const fmtNum = n => (Number(n)||0).toLocaleString('en-US', {maximumFractionDigits:0});
 export const todayISO = () => new Date().toISOString().slice(0,10);
 export const ym = d => (d||todayISO()).slice(0,7);
+export const userName = u => u === 'nadeem' ? 'Nadeem' : u === 'bilawal' ? 'Bilawal' : u;
+export const userBadge = u => u;
 
 export const agg = (data) => {
   const inventory = data.inventory || [];
