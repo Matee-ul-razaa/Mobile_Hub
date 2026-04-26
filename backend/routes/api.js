@@ -9,6 +9,7 @@ const Hawala = require('../models/Hawala');
 const Investor = require('../models/Investor');
 const Payout = require('../models/Payout');
 const Setting = require('../models/Setting');
+const MyInvestment = require('../models/MyInvestment');
 
 // Helper to define basic CRUD
 const crudRoutes = (path, Model) => {
@@ -65,6 +66,7 @@ const crudRoutes = (path, Model) => {
 };
 
 crudRoutes('/inventory', Inventory);
+crudRoutes('/owner-investment', OwnerInvestment);
 
 // Sales CRUD with Inventory Synchronization
 router.get('/sales', async (req, res) => {
@@ -87,7 +89,7 @@ router.put('/sales/:id', async (req, res) => {
   try {
     const oldSale = await Sale.findById(req.params.id);
     const newSale = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    
+
     if (oldSale && newSale && oldSale.model === newSale.model) {
       const diff = (newSale.qty || 0) - (oldSale.qty || 0);
       const inv = await Inventory.findOne({ model: newSale.model });
@@ -167,9 +169,10 @@ router.post('/bulk-import', async (req, res) => {
     else if (table === 'hawala') Model = Hawala;
     else if (table === 'investors') Model = Investor;
     else if (table === 'payouts') Model = Payout;
-    
+    else if (table === 'owner-investment') Model = OwnerInvestment;
+
     if (!Model) return res.status(400).json({ error: 'Invalid table' });
-    
+
     const saved = await Model.insertMany(data);
     res.json({ message: `Imported ${saved.length} items`, count: saved.length });
   } catch (err) {
@@ -187,6 +190,7 @@ router.post('/reset-all', async (req, res) => {
       Hawala.deleteMany({}),
       Investor.deleteMany({}),
       Payout.deleteMany({}),
+      OwnerInvestment.deleteMany({}),
     ]);
     res.json({ message: 'All data deleted' });
   } catch (err) {

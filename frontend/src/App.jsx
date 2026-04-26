@@ -11,7 +11,9 @@ import Expenses from './pages/Expenses';
 import Cashflow from './pages/Cashflow';
 import Hawala from './pages/Hawala';
 import Investors from './pages/Investors';
+import MyInvestment from './pages/MyInvestment'; // NEW
 import Payouts from './pages/Payouts';
+import CapitalProfit from './pages/CapitalProfit'; // NEW
 import Settings from './pages/Settings';
 
 const Sidebar = ({ menuOpen, setMenuOpen }) => {
@@ -60,8 +62,14 @@ const Sidebar = ({ menuOpen, setMenuOpen }) => {
           <NavLink to="/investors" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
             <span className="icon">👥</span> Investors
           </NavLink>
+          <NavLink to="/my-investment" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
+            <span className="icon">👨‍💼</span> My Investment
+          </NavLink>
           <NavLink to="/payouts" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
             <span className="icon">📅</span> Investor Payouts
+          </NavLink>
+          <NavLink to="/capital-profit" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
+            <span className="icon">📈</span> Capital & Profit
           </NavLink>
           <NavLink to="/settings" onClick={() => setMenuOpen(false)} className={({ isActive }) => isActive ? "active" : ""}>
             <span className="icon">⚙️</span> Settings / Backup
@@ -103,7 +111,9 @@ const Layout = () => {
             <Route path="/cashflow" element={<Cashflow />} />
             <Route path="/hawala" element={<Hawala />} />
             <Route path="/investors" element={<Investors />} />
+            <Route path="/my-investment" element={<MyInvestment />} />
             <Route path="/payouts" element={<Payouts />} />
+            <Route path="/capital-profit" element={<CapitalProfit />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </div>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { fetcher, putter, poster, deleter } from './api';
+import { fetcher } from './api';
 
 const DataContext = createContext();
 
@@ -12,13 +12,14 @@ export const DataProvider = ({ children }) => {
     hawala: [],
     investors: [],
     payouts: [],
+    ownerInvestment: [],
     settings: { businessName: 'Mobile Hub', owner: '' }
   });
   const [loading, setLoading] = useState(true);
 
   const loadAll = useCallback(async () => {
     try {
-      const [inv, sls, exp, cf, hw, invs, po, set] = await Promise.all([
+      const [inv, sls, exp, cf, hw, invs, po, set, own] = await Promise.all([
         fetcher('/inventory'),
         fetcher('/sales'),
         fetcher('/expenses'),
@@ -27,6 +28,7 @@ export const DataProvider = ({ children }) => {
         fetcher('/investors'),
         fetcher('/payouts'),
         fetcher('/settings'),
+        fetcher('/owner-investment'),
       ]);
       setData({
         inventory: Array.isArray(inv) ? inv : [],
@@ -36,12 +38,12 @@ export const DataProvider = ({ children }) => {
         hawala: Array.isArray(hw) ? hw : [],
         investors: Array.isArray(invs) ? invs : [],
         payouts: Array.isArray(po) ? po : [],
+        ownerInvestment: Array.isArray(own) ? own : [],
         settings: set && typeof set === 'object' ? set : { businessName: 'Mobile Hub', owner: '' }
       });
       setLoading(false);
     } catch (err) {
       console.error("Error loading data:", err);
-      // Fallback
       setLoading(false);
     }
   }, []);

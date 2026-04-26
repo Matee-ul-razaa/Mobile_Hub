@@ -25,13 +25,14 @@ const Dashboard = () => {
   const hawalaPKR = data.hawala.reduce((a,x) => a + (+x.amountPKR||0), 0);
   const hawalaDiscount = data.hawala.reduce((a,x) => a + (+x.discountKRW||0), 0);
   const pendingReceivable = data.sales.reduce((a,x) => a + Math.max(0, (x.qty*x.pricePerUnit) - (x.received||0)), 0);
-  const totalCapital = data.investors.reduce((a,x) => a + (+x.capital||0), 0);
+  const ownerCap = data.ownerInvestment.reduce((a,x) => a + (+x.amount||0), 0);
+  const totalCapital = data.investors.reduce((a,x) => a + (+x.capital||0), 0) + ownerCap;
   const totalCapitalPKR = data.investors.reduce((a,x) => a + (+x.capitalPKR||0), 0);
   const totalMonthly = data.investors.reduce((a,x) => a + (+x.monthlyPayout||0), 0);
   const totalMonthlyPKR = data.investors.reduce((a,x) => a + (+x.monthlyPayoutPKR||0), 0);
   const totalPaid = data.payouts.reduce((a,x) => a + (+x.amount||0), 0);
   const totalPaidPKR = data.payouts.reduce((a,x) => a + (+x.amountPKR||0), 0);
-  const cashInHand = cashIn - cashOut + hawalaIn - totalExp - totalPaid;
+  const cashInHand = cashIn - cashOut + hawalaIn + ownerCap - totalExp - totalPaid;
 
   const a = { invValue, invUnits, salesRev, salesCOGS, grossProfit, totalExp, netProfit, cashIn, cashOut, hawalaIn, hawalaPKR, hawalaDiscount, pendingReceivable, totalCapital, totalCapitalPKR, totalMonthly, totalMonthlyPKR, totalPaid, totalPaidPKR, cashInHand };
 
@@ -166,9 +167,9 @@ const Dashboard = () => {
         <div className="kpi"><div className="kpi-label">Total Hawala Discount</div>
           <div className="kpi-value neg">{fmtKRW(a.hawalaDiscount)}</div>
           <div className="kpi-sub">Discount given on hawala</div></div>
-        <div className="kpi"><div className="kpi-label">Investor Capital</div>
+        <div className="kpi"><div className="kpi-label">Total Working Capital</div>
           <div className="kpi-value purple">{fmtKRW(a.totalCapital)}</div>
-          <div className="kpi-sub">{data.investors.length} investors · ₨{fmtNum(a.totalCapitalPKR)} paid in PK</div></div>
+          <div className="kpi-sub">{data.investors.length} investors + My Capital</div></div>
         <div className="kpi"><div className="kpi-label">Monthly Payout Due</div>
           <div className="kpi-value">{fmtKRW(a.totalMonthly)}</div>
           <div className="kpi-sub">₨{fmtNum(a.totalMonthlyPKR)}/mo in PK · Total paid: {fmtKRW(a.totalPaid)}</div></div>
