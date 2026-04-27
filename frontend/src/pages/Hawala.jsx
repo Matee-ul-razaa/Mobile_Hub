@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, fmtNum, agg } from '../utils';
 
-const Hawala = () => {
+const Hawala = ({ toggleMenu }) => {
   const { data, addHawala, updateHawala, deleteHawala } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -11,9 +11,15 @@ const Hawala = () => {
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-title">Fazi Cash (Hawala)</h2>
-        <div className="page-actions">
+      <div className="top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="menu-toggle" onClick={toggleMenu}>☰</button>
+          <div>
+            <h1 className="page-title">Fazi Cash</h1>
+            <div className="page-sub">Hawala & PKR transfers</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Record Fazi Cash</button>
         </div>
       </div>
@@ -32,10 +38,6 @@ const Hawala = () => {
         <div className="kpi">
           <div className="kpi-label">Total Discount</div>
           <div className="kpi-value neg">{fmtKRW(a.hawalaDiscount)}</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi-label">Transactions</div>
-          <div className="kpi-value">{data.hawala.length}</div>
         </div>
       </div>
 
@@ -67,8 +69,8 @@ const Hawala = () => {
                   <td><strong>{h.buyer}</strong></td>
                   <td>{h.receiverName || '—'}</td>
                   <td className="num">₨{fmtNum(h.amountPKR)}</td>
-                  <td className="num text-green"><strong>+{fmtKRW(h.amountKRW)}</strong></td>
-                  <td className="num text-red">{h.discountKRW ? `−${fmtKRW(h.discountKRW)}` : '—'}</td>
+                  <td className="num pos"><strong>+{fmtKRW(h.amountKRW)}</strong></td>
+                  <td className="num neg">{h.discountKRW ? `−${fmtKRW(h.discountKRW)}` : '—'}</td>
                   <td>
                     <div className="inline-actions">
                       <button className="btn btn-sm" onClick={() => { setEditingItem(h); setShowModal(true); }}>Edit</button>
@@ -113,7 +115,7 @@ const HawalaModal = ({ item, sales, onClose, onSave }) => {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3>{item ? 'Edit' : 'Record'} Fazi Cash</h3>
+        <div className="card-header"><h3 className="card-title">{item ? 'Edit' : 'Record'} Fazi Cash</h3></div>
         <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
         <div className="form-row"><label>Buyer (Pakistan) *</label><input value={form.buyer} onChange={e=>setForm({...form, buyer:e.target.value})} /></div>
         <div className="form-row">

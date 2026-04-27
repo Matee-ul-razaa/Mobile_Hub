@@ -3,7 +3,7 @@ import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 import * as XLSX from 'xlsx';
 
-const Sales = () => {
+const Sales = ({ toggleMenu }) => {
   const { data, addSale, updateSale, deleteSale } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
@@ -30,9 +30,15 @@ const Sales = () => {
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-title">Sales & Shipments</h2>
-        <div className="page-actions">
+      <div className="top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="menu-toggle" onClick={toggleMenu}>☰</button>
+          <div>
+            <h1 className="page-title">Sales</h1>
+            <div className="page-sub">Track buyer orders and shipments</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn" onClick={handleExport}>⬇ Export Excel</button>
           <button className="btn btn-primary" onClick={() => { setEditingSale(null); setShowModal(true); }}>+ New Sale</button>
         </div>
@@ -86,7 +92,7 @@ const Sales = () => {
                     <td className="num">{s.qty}</td>
                     <td className="num"><strong>{fmtKRW(total)}</strong></td>
                     <td className="num">{fmtKRW(s.received || 0)}</td>
-                    <td className="num text-red">{fmtKRW(pending)}</td>
+                    <td className="num neg">{fmtKRW(pending)}</td>
                     <td>
                       <span className={`badge badge-${status === 'Paid' ? 'green' : (status === 'Partial' ? 'amber' : 'red')}`}>
                         {status}
@@ -136,7 +142,7 @@ const SaleModal = ({ sale, inventory, onClose, onSave }) => {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3>{sale ? 'Edit' : 'New'} Sale Record</h3>
+        <div className="card-header"><h3 className="card-title">{sale ? 'Edit' : 'New'} Sale Record</h3></div>
         <div className="form-row-2">
           <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
           <div className="form-row"><label>Buyer *</label><input value={form.buyer} onChange={e=>setForm({...form, buyer:e.target.value})} /></div>

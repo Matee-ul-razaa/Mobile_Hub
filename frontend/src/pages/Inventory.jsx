@@ -3,7 +3,7 @@ import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 import * as XLSX from 'xlsx';
 
-const Inventory = () => {
+const Inventory = ({ toggleMenu }) => {
   const { data, addInventory, updateInventory, deleteInventory } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -58,9 +58,15 @@ const Inventory = () => {
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-title">Inventory Management</h2>
-        <div className="page-actions">
+      <div className="top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="menu-toggle" onClick={toggleMenu}>☰</button>
+          <div>
+            <h1 className="page-title">Inventory</h1>
+            <div className="page-sub">Manage your stock in Korea</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn" onClick={handleExport}>⬇ Export Excel</button>
           <label className="btn" style={{ cursor: 'pointer' }}>
             ⬆ Import Excel
@@ -145,7 +151,7 @@ const InventoryModal = ({ item, onClose, onSave }) => {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3>{item ? 'Edit' : 'Add'} Inventory Item</h3>
+        <div className="card-header"><h3 className="card-title">{item ? 'Edit' : 'Add'} Inventory Item</h3></div>
         <div className="form-row"><label>Model *</label><input value={form.model} onChange={e=>setForm({...form, model:e.target.value})} /></div>
         <div className="form-row-2">
           <div className="form-row"><label>Brand</label><input value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} /></div>

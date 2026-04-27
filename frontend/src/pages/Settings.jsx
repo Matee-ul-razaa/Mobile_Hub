@@ -1,70 +1,78 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useData } from '../DataContext';
 
-const Settings = () => {
-  const { data, updateSettings } = useData();
-  const [bizName, setBizName] = useState(data.settings.businessName || 'Mobile Hub');
-  const [apiKey, setApiKey] = useState(data.settings.apiKey || '');
+const Settings = ({ toggleMenu }) => {
+  const { data, setData } = useData();
 
-  const handleExport = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mobilehub-backup-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportData = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href",     dataStr);
+    downloadAnchorNode.setAttribute("download", `mobile-hub-backup-${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
   };
 
-  const handleSave = async () => {
-    await updateSettings({ businessName: bizName, apiKey });
-    alert('Settings saved!');
+  const handleImportData = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const imported = JSON.parse(evt.target.result);
+        if (window.confirm('This will replace ALL current data with the backup. Proceed?')) {
+          setData(imported);
+          alert('Data restored successfully!');
+        }
+      } catch (err) {
+        alert('Invalid backup file.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-title">System Settings</h2>
-      </div>
-
-      <div className="card" style={{ marginBottom: '15px' }}>
-        <div className="card-header"><h3 className="card-title">Business Profile</h3></div>
-        <div className="form-row">
-          <label>Business Name</label>
-          <input value={bizName} onChange={e=>setBizName(e.target.value)} placeholder="e.g. Mobile Hub Korea" />
+      <div className="top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="menu-toggle" onClick={toggleMenu}>☰</button>
+          <div>
+            <h1 className="page-title">Settings / Backup</h1>
+            <div className="page-sub">System configuration and data safety</div>
+          </div>
         </div>
-        <button className="btn btn-primary" onClick={handleSave}>Save Profile</button>
       </div>
 
-      <div className="card" style={{ marginBottom: '15px' }}>
-        <div className="card-header"><h3 className="card-title">Artificial Intelligence</h3></div>
-        <p className="muted" style={{ fontSize: '13px', marginBottom: '12px', lineHeight: '1.5' }}>
-          Add an Anthropic API key to unlock natural language conversations with your business data. 
-          The offline Roman Urdu engine works even without a key.
-        </p>
-        <div className="form-row">
-          <label>Anthropic API Key (sk-ant-...)</label>
-          <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="Enter key for online AI" />
-        </div>
-        <button className="btn btn-primary" onClick={handleSave}>Update AI Key</button>
-      </div>
-
-      <div className="card" style={{ marginBottom: '15px' }}>
-        <div className="card-header"><h3 className="card-title">Data Backup & Mobility</h3></div>
-        <p className="muted" style={{ fontSize: '13px', marginBottom: '12px' }}>
-          Download a complete snapshot of your business database in JSON format.
+      <div className="card" style={{ maxWidth: '600px' }}>
+        <div className="card-header"><h3 className="card-title">Cloud Backup & Restore</h3></div>
+        <p className="muted" style={{ fontSize: '13px', marginBottom: '18px' }}>
+          Your data is automatically saved to the database. However, you can download a full JSON backup for offline keeping.
         </p>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-primary" onClick={handleExport}>⬇ Download JSON Backup</button>
+          <button className="btn" onClick={handleExportData}>Download Backup (.json)</button>
+          <label className="btn" style={{ cursor: 'pointer' }}>
+            Restore from File
+            <input type="file" style={{ display: 'none' }} onChange={handleImportData} accept=".json" />
+          </label>
         </div>
-      </div>
 
-      <div className="card">
-        <div className="card-header"><h3 className="card-title" style={{ color: 'var(--red)' }}>Danger Zone</h3></div>
-        <p className="muted" style={{ fontSize: '13px', marginBottom: '12px' }}>
-          Resetting data will delete everything but keep the platform structure.
+        <div className="sep"></div>
+
+        <div className="card-header"><h3 className="card-title">Business Identity</h3></div>
+        <div className="form-row">
+          <label>Platform Name</label>
+          <input value="Mobile Hub — Korea" disabled />
+        </div>
+        <div className="form-row">
+          <label>Base Currency</label>
+          <input value="KRW (Korean Won)" disabled />
+        </div>
+        
+        <div className="sep"></div>
+        <p className="muted" style={{ fontSize: '11px' }}>
+          System Version: 2.0.0 (MERN Stack Edition) · Match: Definitive HTML Master v1.0
         </p>
-        <button className="btn btn-danger" onClick={() => alert('Feature coming soon: Use JSON import to overwrite data.')}>Reset All Data</button>
       </div>
     </div>
   );

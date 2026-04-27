@@ -3,18 +3,23 @@ import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 import { Link } from 'react-router-dom';
 
-const Dashboard = () => {
+const Dashboard = ({ toggleMenu }) => {
   const { data } = useData();
   const a = agg(data);
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-title">Executive Overview</h2>
-        <div className="muted" style={{ fontSize: '13px' }}>Real-time business intelligence for Mobile Hub</div>
+      <div className="top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="menu-toggle" onClick={toggleMenu}>☰</button>
+          <div>
+            <h1 className="page-title">Dashboard</h1>
+            <div className="page-sub">Overview of your business</div>
+          </div>
+        </div>
       </div>
 
-      <div className="kpi-grid dashboard-mega-grid">
+      <div className="kpi-grid">
         <div className="kpi">
           <div className="kpi-label">Cash In Hand</div>
           <div className="kpi-value">{fmtKRW(a.cashInHand)}</div>
@@ -65,7 +70,7 @@ const Dashboard = () => {
         <div className="kpi">
           <div className="kpi-label">Investor Payouts</div>
           <div className="kpi-value neg">{fmtKRW(a.totalPaid)}</div>
-          <div className="kpi-sub">Total paid to 5 investors</div>
+          <div className="kpi-sub">Total paid to partners</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">Owner Investment</div>
@@ -79,9 +84,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="chart-grid" style={{ marginTop: '20px' }}>
+      <div className="chart-grid">
         <div className="card">
-          <div className="card-header"><h3 className="card-title">Recent Inventory</h3></div>
+          <div className="card-header"><h3 className="card-title">Inventory Highlights</h3></div>
           <div className="table-wrap">
             <table>
               <thead>
@@ -92,7 +97,7 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {data.inventory.slice(-5).reverse().map(i => (
+                {data.inventory.filter(i => (i.qty - (i.soldQty||0)) > 0).slice(0, 5).map(i => (
                   <tr key={i._id}>
                     <td>{i.model}</td>
                     <td className="num">{i.qty - (i.soldQty||0)}</td>
@@ -102,25 +107,27 @@ const Dashboard = () => {
               </tbody>
             </table>
           </div>
-          <Link to="/inventory" className="btn btn-sm" style={{ marginTop: '10px', display: 'inline-block' }}>View All Inventory</Link>
+          <div style={{ marginTop: '12px' }}>
+            <Link to="/inventory" className="btn btn-sm">Manage Inventory</Link>
+          </div>
         </div>
 
         <div className="card">
           <div className="card-header"><h3 className="card-title">Recent Activity</h3></div>
-          <div className="activity-mini-list">
-            {data.activity.slice(-6).reverse().map((act, i) => (
-              <div key={i} className="activity-item">
-                <span className={`badge badge-${act.action==='create'?'green':act.action==='update'?'amber':'red'}`} style={{ fontSize: '9px' }}>
+          <div className="activity-list">
+            {data.activity.slice(-5).reverse().map((act, i) => (
+              <div key={i} style={{ display: 'flex', gap: '10px', fontSize: '12px', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
+                <span className={`badge badge-${act.action==='create'?'green':act.action==='update'?'amber':'red'}`} style={{ fontSize: '9px', textTransform: 'uppercase' }}>
                   {act.action}
                 </span>
-                <span style={{ fontSize: '12px', marginLeft: '8px' }}>
+                <div style={{ flex: 1 }}>
                   <strong>{act.user}</strong> {act.action}d {act.entity}
-                </span>
-                <div className="muted" style={{ fontSize: '10px', marginLeft: '45px' }}>{new Date(act.at).toLocaleTimeString()}</div>
+                  <div className="muted" style={{ fontSize: '10px' }}>{new Date(act.at).toLocaleTimeString()}</div>
+                </div>
               </div>
             ))}
           </div>
-          <Link to="/activity" className="btn btn-sm" style={{ marginTop: '10px', display: 'inline-block' }}>View Full Log</Link>
+          <Link to="/activity-log" className="btn btn-sm">Full Audit Trail</Link>
         </div>
       </div>
     </div>

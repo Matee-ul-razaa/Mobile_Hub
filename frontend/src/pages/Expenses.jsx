@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 
-const Expenses = () => {
+const Expenses = ({ toggleMenu }) => {
   const { data, addExpense, updateExpense, deleteExpense } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -13,15 +13,21 @@ const Expenses = () => {
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-title">Operational Expenses</h2>
-        <div className="page-actions">
+      <div className="top-bar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="menu-toggle" onClick={toggleMenu}>☰</button>
+          <div>
+            <h1 className="page-title">Expenses</h1>
+            <div className="page-sub">Shipping, customs and office costs</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Add Expense</button>
         </div>
       </div>
 
       <div className="chart-grid">
-        <div className="card" style={{ flex: 2 }}>
+        <div className="card">
           <div className="card-header"><h3 className="card-title">All Expenses ({fmtKRW(a.totalExp)})</h3></div>
           <div className="table-wrap">
             <table>
@@ -40,7 +46,7 @@ const Expenses = () => {
                     <td>{e.date}</td>
                     <td><span className="badge badge-amber">{e.category}</span></td>
                     <td>{e.note}</td>
-                    <td className="num text-red"><strong>{fmtKRW(e.amount)}</strong></td>
+                    <td className="num neg"><strong>{fmtKRW(e.amount)}</strong></td>
                     <td>
                       <div className="inline-actions">
                         <button className="btn btn-sm" onClick={() => { setEditingItem(e); setShowModal(true); }}>Edit</button>
@@ -54,7 +60,7 @@ const Expenses = () => {
           </div>
         </div>
 
-        <div className="card" style={{ flex: 1 }}>
+        <div className="card">
           <div className="card-header"><h3 className="card-title">By Category</h3></div>
           <div className="cat-list">
             {Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat, val]) => (
@@ -89,7 +95,7 @@ const ExpenseModal = ({ item, onClose, onSave }) => {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3>{item ? 'Edit' : 'Add'} Expense</h3>
+        <div className="card-header"><h3 className="card-title">{item ? 'Edit' : 'Add'} Expense</h3></div>
         <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
         <div className="form-row">
           <label>Category</label>
