@@ -1,112 +1,146 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useData } from './DataContext';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import Expenses from './pages/Expenses';
+import Cashflow from './pages/Cashflow';
 import Hawala from './pages/Hawala';
 import Investors from './pages/Investors';
 import MyInvestment from './pages/MyInvestment';
 import Payouts from './pages/Payouts';
-import CapitalProfit from './pages/CapitalProfit';
 import Shipments from './pages/Shipments';
-import ActivityLog from './pages/ActivityLog';
 import AIAssistant from './pages/AIAssistant';
+import ActivityLog from './pages/ActivityLog';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
-import Cashflow from './pages/Cashflow';
+import Capital from './pages/CapitalProfit';
 
-const SidebarLink = ({ to, label, icon }) => {
+function App() {
+  const [user, setUser] = useState(localStorage.getItem('mobile_hub_user'));
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const active = location.pathname === to;
-  return (
-    <Link to={to} className={`nav-link ${active ? 'active' : ''}`}>
-      <span className="icon">{icon}</span> {label}
-    </Link>
-  );
-};
+  const navigate = useNavigate();
 
-const Layout = ({ user, onLogout }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!user && location.pathname !== '/login') {
+      navigate('/login');
+    }
+  }, [user, location.pathname, navigate]);
+
+  const handleLogin = (u) => {
+    setUser(u);
+    navigate('/');
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Sign out?')) {
+      localStorage.removeItem('mobile_hub_user');
+      setUser(null);
+      navigate('/login');
+    }
+  };
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  if (!user && location.pathname === '/login') {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  if (!user) return null;
+
+  const initial = user[0].toUpperCase();
+  const avatarClass = user === 'nadeem' ? 'n' : 'b';
+  const fullName = user === 'nadeem' ? 'Nadeem' : 'Bilawal';
 
   return (
     <div className="app-layout">
-      <div className={`backdrop ${menuOpen ? 'show' : ''}`} onClick={() => setMenuOpen(false)}></div>
+      {isMenuOpen && <div className="backdrop show" onClick={() => setIsMenuOpen(false)}></div>}
       
-      <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="logo-circ">MH</div>
-          <div className="logo-txt">
-            <div className="biz-name">Mobile Hub</div>
-            <div className="biz-sub">Korea ➞ Pakistan Exports</div>
+      <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
+        <div className="brand">
+          <div className="brand-logo">MH</div>
+          <div>
+            <div className="brand-title">Mobile Hub</div>
+            <div className="brand-sub">Korea → Pakistan Exports</div>
           </div>
         </div>
 
         <nav className="nav">
-          <SidebarLink to="/" label="Dashboard" icon="📊" />
-          <SidebarLink to="/inventory" label="Inventory" icon="📦" />
-          <SidebarLink to="/sales" label="Sales" icon="💼" />
-          <SidebarLink to="/shipments" label="Shipments" icon="📮" />
-          <SidebarLink to="/expenses" label="Expenses" icon="💸" />
-          <SidebarLink to="/cashflow" label="Cash In / Out" icon="💵" />
-          <SidebarLink to="/fazi-cash" label="Fazi Cash" icon="🔁" />
-          <SidebarLink to="/investors" label="Investors" icon="👥" />
-          <SidebarLink to="/my-investment" label="My Investment" icon="🧑‍💼" />
-          <SidebarLink to="/payouts" label="Investor Payouts" icon="📅" />
-          <SidebarLink to="/capital-profit" label="Capital & Profit" icon="📈" />
-          <SidebarLink to="/ai-assistant" label="AI Assistant" icon="🤖" />
-          <SidebarLink to="/activity-log" label="Activity Log" icon="📝" />
-          <SidebarLink to="/settings" label="Settings / Backup" icon="⚙️" />
+          <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">📊</span> Dashboard
+          </NavLink>
+          <NavLink to="/inventory" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">📦</span> Inventory
+          </NavLink>
+          <NavLink to="/sales" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">💼</span> Sales
+          </NavLink>
+          <NavLink to="/shipments" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">📮</span> Shipments
+          </NavLink>
+          <NavLink to="/expenses" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">💸</span> Expenses
+          </NavLink>
+          <NavLink to="/cashflow" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">💵</span> Cash In / Out
+          </NavLink>
+          <NavLink to="/fazi-cash" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">🔁</span> Fazi Cash
+          </NavLink>
+          <NavLink to="/investors" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">👥</span> Investors
+          </NavLink>
+          <NavLink to="/owner-investment" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">🧑‍💼</span> My Investment
+          </NavLink>
+          <NavLink to="/payouts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">📅</span> Investor Payouts
+          </NavLink>
+          <NavLink to="/capital" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">📈</span> Capital & Profit
+          </NavLink>
+          <NavLink to="/ai-assistant" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">🤖</span> AI Assistant
+          </NavLink>
+          <NavLink to="/activity-log" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">📝</span> Activity Log
+          </NavLink>
+          <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">⚙️</span> Settings / Backup
+          </NavLink>
         </nav>
 
         <div className="user-chip">
-          <div className={`avatar ${user}`}>{(user||'N')[0].toUpperCase()}</div>
+          <div className={`avatar ${avatarClass}`}>{initial}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="u-name">{user === 'nadeem' ? 'Nadeem' : 'Bilawal'}</div>
+            <div className="u-name">{fullName}</div>
             <div className="u-role">Admin</div>
           </div>
-          <button className="logout-btn" onClick={onLogout}>Sign out</button>
+          <button type="button" className="logout-btn" onClick={handleLogout}>Sign out</button>
         </div>
       </aside>
 
       <main className="page-body">
         <Routes>
-          <Route path="/" element={<Dashboard toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/inventory" element={<Inventory toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/sales" element={<Sales toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/shipments" element={<Shipments toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/expenses" element={<Expenses toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/cashflow" element={<Cashflow toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/fazi-cash" element={<Hawala toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/investors" element={<Investors toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/my-investment" element={<MyInvestment toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/payouts" element={<Payouts toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/capital-profit" element={<CapitalProfit toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/ai-assistant" element={<AIAssistant toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/activity-log" element={<ActivityLog toggleMenu={() => setMenuOpen(!menuOpen)} />} />
-          <Route path="/settings" element={<Settings toggleMenu={() => setMenuOpen(!menuOpen)} />} />
+          <Route path="/" element={<Dashboard toggleMenu={toggleMenu} />} />
+          <Route path="/inventory" element={<Inventory toggleMenu={toggleMenu} />} />
+          <Route path="/sales" element={<Sales toggleMenu={toggleMenu} />} />
+          <Route path="/expenses" element={<Expenses toggleMenu={toggleMenu} />} />
+          <Route path="/cashflow" element={<Cashflow toggleMenu={toggleMenu} />} />
+          <Route path="/fazi-cash" element={<Hawala toggleMenu={toggleMenu} />} />
+          <Route path="/investors" element={<Investors toggleMenu={toggleMenu} />} />
+          <Route path="/owner-investment" element={<MyInvestment toggleMenu={toggleMenu} />} />
+          <Route path="/payouts" element={<Payouts toggleMenu={toggleMenu} />} />
+          <Route path="/shipments" element={<Shipments toggleMenu={toggleMenu} />} />
+          <Route path="/ai-assistant" element={<AIAssistant toggleMenu={toggleMenu} />} />
+          <Route path="/activity-log" element={<ActivityLog toggleMenu={toggleMenu} />} />
+          <Route path="/settings" element={<Settings toggleMenu={toggleMenu} />} />
+          <Route path="/capital" element={<Capital toggleMenu={toggleMenu} />} />
         </Routes>
       </main>
     </div>
   );
-};
-
-const App = () => {
-  const [user, setUser] = useState(localStorage.getItem('mobile_hub_user'));
-
-  const handleLogout = () => {
-    localStorage.removeItem('mobile_hub_user');
-    setUser(null);
-  };
-
-  if (!user) return <Login onLogin={setUser} />;
-
-  return (
-    <Router>
-      <Layout user={user} onLogout={handleLogout} />
-    </Router>
-  );
-};
+}
 
 export default App;

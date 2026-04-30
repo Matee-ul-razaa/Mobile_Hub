@@ -1,64 +1,194 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { fetcher } from './api';
 
 const DataContext = createContext();
 
-export const DataProvider = ({ children }) => {
-  const [data, setData] = useState({
-    inventory: [],
-    sales: [],
-    expenses: [],
-    cashflow: [],
-    hawala: [],
-    investors: [],
-    payouts: [],
-    ownerInvestment: [],
-    shipments: [],
-    activity: [],
-    settings: { businessName: 'Mobile Hub', owner: '', users: {} }
-  });
-  const [loading, setLoading] = useState(true);
+const STORE_KEY = 'mobilex_v1';
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-  const loadAll = useCallback(async () => {
+const defaultData = {
+  inventory: [
+    { _id: uid(), model: 'iPhone 15 Pro 256GB', brand: 'Apple', sku: 'IP15P-256', qty: 12, costPerUnit: 1650000, soldQty: 8, notes: 'Space Black' },
+    { _id: uid(), model: 'Samsung S24 Ultra 512GB', brand: 'Samsung', sku: 'S24U-512', qty: 6, costPerUnit: 1420000, soldQty: 4, notes: '' },
+  ],
+  sales: [
+    { _id: uid(), date: todayISO(), buyer: 'Ali Traders, Karachi', model: 'iPhone 15 Pro 256GB', qty: 8, pricePerUnit: 1820000, received: 0, notes: 'Pending hawala' },
+  ],
+  expenses: [
+    { _id: uid(), date: todayISO(), category: 'Shipping', amount: 350000, note: 'DHL box to Karachi' },
+    { _id: uid(), date: todayISO(), category: 'Packaging', amount: 45000, note: '' },
+  ],
+  cashflow: [
+    { _id: uid(), date: todayISO(), type: 'in', amount: 2500000, source: 'Investor top-up', note: 'Initial capital' },
+  ],
+  hawala: [],
+  investors: [
+    { _id: uid(), name: 'Investor 1', contact: '', capitalPKR: 2000000, capital: 10000000, monthlyPayoutPKR: 60000, monthlyPayout: 300000, startDate: todayISO(), notes: '' },
+    { _id: uid(), name: 'Investor 2', contact: '', capitalPKR: 1600000, capital: 8000000, monthlyPayoutPKR: 48000, monthlyPayout: 240000, startDate: todayISO(), notes: '' },
+    { _id: uid(), name: 'Investor 3', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: todayISO(), notes: '' },
+    { _id: uid(), name: 'Investor 4', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: todayISO(), notes: '' },
+    { _id: uid(), name: 'Investor 5', contact: '', capitalPKR: 800000, capital: 4000000, monthlyPayoutPKR: 24000, monthlyPayout: 120000, startDate: todayISO(), notes: '' },
+  ],
+  payouts: [],
+  ownerInvestments: [],
+  activity: [],
+  shipments: [],
+  settings: { businessName: 'Mobile Hub', owner: '', users: {} }
+};
+
+export const DataProvider = ({ children }) => {
+  const [data, setData] = useState(() => {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return defaultData;
     try {
-      const [inv, sls, exp, cf, hw, invs, po, set, own, shp, act] = await Promise.all([
-        fetcher('/inventory'),
-        fetcher('/sales'),
-        fetcher('/expenses'),
-        fetcher('/cashflow'),
-        fetcher('/hawala'),
-        fetcher('/investors'),
-        fetcher('/payouts'),
-        fetcher('/settings'),
-        fetcher('/owner-investment'),
-        fetcher('/shipments'),
-        fetcher('/activity'),
-      ]);
-      setData({
-        inventory: Array.isArray(inv) ? inv : [],
-        sales: Array.isArray(sls) ? sls : [],
-        expenses: Array.isArray(exp) ? exp : [],
-        cashflow: Array.isArray(cf) ? cf : [],
-        hawala: Array.isArray(hw) ? hw : [],
-        investors: Array.isArray(invs) ? invs : [],
-        payouts: Array.isArray(po) ? po : [],
-        ownerInvestment: Array.isArray(own) ? own : [],
-        shipments: Array.isArray(shp) ? shp : [],
-        activity: Array.isArray(act) ? act : [],
-        settings: set && typeof set === 'object' ? set : { businessName: 'Mobile Hub', owner: '', users: {} }
-      });
-      setLoading(false);
-    } catch (err) {
-      console.error("Error loading data:", err);
-      setLoading(false);
+      const parsed = JSON.parse(raw);
+      // Ensure all keys exist
+      for (const k in defaultData) if (!(k in parsed)) parsed[k] = defaultData[k];
+      return parsed;
+    } catch (e) {
+      return defaultData;
     }
-  }, []);
+  });
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  }, [data]);
 
-  const value = { data, loadAll };
+  const logActivity = (action, entity, detail) => {
+    const newAct = {
+      at: new Date().toISOString(),
+      user: localStorage.getItem('mobile_hub_user') || 'system',
+      action,
+      entity,
+      detail
+    };
+    setData(prev => ({
+      ...prev,
+      activity: [...prev.activity, newAct].slice(-1000)
+    }));
+  };
+
+  // GENERIC CRUD HELPERS
+  const addItem = (key, obj) => {
+    const newObj = { ...obj, _id: uid() };
+    setData(prev => ({
+      ...prev,
+      [key]: [...prev[key], newObj]
+    }));
+    logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+    return newObj;
+  };
+
+  const updateItem = (key, id, obj) => {
+    setData(prev => ({
+      ...prev,
+      [key]: prev[key].map(item => item._id === id ? { ...item, ...obj } : item)
+    }));
+    logActivity('update', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+  };
+
+  const deleteItem = (key, id) => {
+    const itemToDelete = data[key].find(i => i._id === id);
+    setData(prev => ({
+      ...prev,
+      [key]: prev[key].filter(item => item._id !== id)
+    }));
+    logActivity('delete', key, itemToDelete?.model || itemToDelete?.buyer || itemToDelete?.category || itemToDelete?.name || 'item');
+  };
+
+  // SPECIFIC WRAPPERS (To match existing page calls)
+  const addInventory = (obj) => addItem('inventory', obj);
+  const updateInventory = (id, obj) => updateItem('inventory', id, obj);
+  const deleteInventory = (id) => deleteItem('inventory', id);
+
+  const addSale = (obj) => {
+    const res = addItem('sales', obj);
+    // Sync inventory sold count
+    setData(prev => ({
+      ...prev,
+      inventory: prev.inventory.map(i => i.model === obj.model ? { ...i, soldQty: (i.soldQty || 0) + obj.qty } : i)
+    }));
+    return res;
+  };
+  const updateSale = (id, obj) => {
+    const prev = data.sales.find(s => s._id === id);
+    if (prev) {
+      setData(prevData => ({
+        ...prevData,
+        inventory: prevData.inventory.map(i => {
+          if (i.model === prev.model) return { ...i, soldQty: Math.max(0, i.soldQty - prev.qty) };
+          return i;
+        })
+      }));
+    }
+    updateItem('sales', id, obj);
+    setData(prevData => ({
+      ...prevData,
+      inventory: prevData.inventory.map(i => {
+        if (i.model === obj.model) return { ...i, soldQty: (i.soldQty || 0) + obj.qty };
+        return i;
+      })
+    }));
+  };
+  const deleteSale = (id) => {
+    const s = data.sales.find(x => x._id === id);
+    if (s) {
+      setData(prev => ({
+        ...prev,
+        inventory: prev.inventory.map(i => i.model === s.model ? { ...i, soldQty: Math.max(0, i.soldQty - s.qty) } : i)
+      }));
+    }
+    deleteItem('sales', id);
+  };
+
+  const addExpense = (obj) => addItem('expenses', obj);
+  const updateExpense = (id, obj) => updateItem('expenses', id, obj);
+  const deleteExpense = (id) => deleteItem('expenses', id);
+
+  const addHawala = (obj) => addItem('hawala', obj);
+  const updateHawala = (id, obj) => updateItem('hawala', id, obj);
+  const deleteHawala = (id) => deleteItem('hawala', id);
+
+  const addInvestor = (obj) => addItem('investors', obj);
+  const updateInvestor = (id, obj) => updateItem('investors', id, obj);
+  const deleteInvestor = (id) => deleteItem('investors', id);
+
+  const addPayout = (obj) => addItem('payouts', obj);
+  const updatePayout = (id, obj) => updateItem('payouts', id, obj);
+  const deletePayout = (id) => deleteItem('payouts', id);
+
+  const addShipment = (obj) => addItem('shipments', obj);
+  const updateShipment = (id, obj) => updateItem('shipments', id, obj);
+  const deleteShipment = (id) => deleteItem('shipments', id);
+
+  const addOwnerInvestment = (obj) => addItem('ownerInvestments', obj);
+  const updateOwnerInvestment = (id, obj) => updateItem('ownerInvestments', id, obj);
+  const deleteOwnerInvestment = (id) => deleteItem('ownerInvestments', id);
+
+  const addCashflow = (obj) => addItem('cashflow', obj);
+  const updateCashflow = (id, obj) => updateItem('cashflow', id, obj);
+  const deleteCashflow = (id) => deleteItem('cashflow', id);
+
+  const updateSettings = (obj) => {
+    setData(prev => ({ ...prev, settings: { ...prev.settings, ...obj } }));
+    logActivity('update', 'settings', 'Business settings updated');
+  };
+
+  const value = { 
+    data, loading, 
+    addInventory, updateInventory, deleteInventory,
+    addSale, updateSale, deleteSale,
+    addExpense, updateExpense, deleteExpense,
+    addHawala, updateHawala, deleteHawala,
+    addInvestor, updateInvestor, deleteInvestor,
+    addPayout, updatePayout, deletePayout,
+    addShipment, updateShipment, deleteShipment,
+    addOwnerInvestment, updateOwnerInvestment, deleteOwnerInvestment,
+    addCashflow, updateCashflow, deleteCashflow,
+    updateSettings
+  };
 
   return (
     <DataContext.Provider value={value}>
