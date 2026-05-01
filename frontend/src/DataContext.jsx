@@ -190,6 +190,8 @@ export const DataProvider = ({ children }) => {
 
   // SYNC WITH BACKEND
   useEffect(() => {
+    const fetchData = async () => {
+      try {
         const fetchSafe = async (url) => {
           try {
             const r = await fetch(url);
