@@ -23,7 +23,7 @@ const ActivityLog = ({ toggleMenu, onLogout }) => {
             <div className="page-sub">Admin Sign-in History</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button 
             className={`btn btn-sm ${filterUser === 'all' ? 'btn-primary' : ''}`} 
             style={{ padding: '4px 12px', fontSize: '11px', border: filterUser === 'all' ? 'none' : '1px solid var(--border)', background: filterUser === 'all' ? '' : 'transparent' }}

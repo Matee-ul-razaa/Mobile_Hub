@@ -77,10 +77,10 @@ const Settings = ({ toggleMenu, onLogout }) => {
         </div>
         <div className="page-sub" style={{ padding: '0 0 16px' }}>Change your own password below. Default password for both admins is admin — please change it.</div>
 
-        <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
           <div
             onClick={() => { if (currentUser === 'nadeem') setActiveAdmin('nadeem'); }}
-            style={{ flex: 1, padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', cursor: currentUser === 'nadeem' ? 'pointer' : 'default', background: activeAdmin === 'nadeem' ? 'rgba(20, 184, 166, 0.1)' : 'transparent', borderColor: activeAdmin === 'nadeem' ? 'var(--teal)' : 'var(--border)' }}
+            style={{ flex: 1, minWidth: '160px', padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', cursor: currentUser === 'nadeem' ? 'pointer' : 'default', background: activeAdmin === 'nadeem' ? 'rgba(20, 184, 166, 0.1)' : 'transparent', borderColor: activeAdmin === 'nadeem' ? 'var(--teal)' : 'var(--border)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>N</div>
@@ -93,7 +93,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
           </div>
           <div
             onClick={() => { if (currentUser === 'bilawal') setActiveAdmin('bilawal'); }}
-            style={{ flex: 1, padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', cursor: currentUser === 'bilawal' ? 'pointer' : 'default', background: activeAdmin === 'bilawal' ? 'rgba(139, 92, 246, 0.1)' : 'transparent', borderColor: activeAdmin === 'bilawal' ? 'var(--purple)' : 'var(--border)' }}
+            style={{ flex: 1, minWidth: '160px', padding: '12px', border: '1px solid var(--border)', borderRadius: '8px', cursor: currentUser === 'bilawal' ? 'pointer' : 'default', background: activeAdmin === 'bilawal' ? 'rgba(139, 92, 246, 0.1)' : 'transparent', borderColor: activeAdmin === 'bilawal' ? 'var(--purple)' : 'var(--border)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>B</div>
@@ -156,7 +156,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
             <option value="anthropic">Anthropic Claude</option>
           </select>
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => { updateSettings({ apiKey: tempApiKey }); showToast('AI settings saved!'); }}>Save AI settings</button>
           <button className="btn" onClick={() => showToast('Connection successful!')}>Test connection</button>
           <button className="btn" style={{ color: 'var(--red)' }} onClick={() => { setTempApiKey(''); updateSettings({ apiKey: '' }); }}>Remove key</button>
@@ -169,7 +169,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
       <div className="card" style={{ marginBottom: '20px' }}>
         <div className="card-header"><h3 className="card-title">Backup & Restore</h3></div>
         <div className="page-sub" style={{ padding: '0 0 16px' }}>Your data lives inside this browser. Always export a backup regularly (especially before clearing browser data or switching devices).</div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={handleExportData}>⬇ Export JSON Backup</button>
           <button className="btn btn-sm">⬇ Export CSV (all tables)</button>
           <label className="btn btn-sm" style={{ cursor: 'pointer' }}>

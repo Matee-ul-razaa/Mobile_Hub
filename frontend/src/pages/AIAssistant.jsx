@@ -118,7 +118,7 @@ const AIAssistant = ({ toggleMenu, onLogout }) => {
             <div className="page-sub">Ask anything about your business</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="badge-group" style={{ background: 'var(--surface-2)', padding: '4px', borderRadius: '8px', display: 'flex', gap: '2px' }}>
             <button className="btn btn-sm btn-primary" style={{ padding: '4px 10px', fontSize: '11px' }}>English</button>
             <button className="btn btn-sm" style={{ padding: '4px 10px', fontSize: '11px', background: 'transparent', border: 'none' }}>Urdu (Roman)</button>
