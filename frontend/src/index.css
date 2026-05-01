@@ -81,9 +81,9 @@ button {
 .app-layout {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -229,6 +229,9 @@ button {
   max-width: 1400px;
   min-width: 0;
   width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .top-bar {
@@ -501,8 +504,16 @@ tr:hover td {
     color: var(--text);
   }
 
+  .app-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+
   .page-body {
     padding: 16px;
+    height: auto;
+    overflow: visible;
   }
 }
 
