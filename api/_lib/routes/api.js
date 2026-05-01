@@ -161,20 +161,19 @@ router.put('/settings', async (req, res) => {
 
     // Special handling for users map to hash passwords if they are updated
     if (req.body.users) {
+      if (!setting.users) setting.users = new Map();
       for (const [key, value] of Object.entries(req.body.users)) {
-        // If the frontend sends a plain 'password' field, hash it and store as 'pwdHash'
-        if (value.password) {
-          value.pwdHash = hashPwd(value.password);
-          delete value.password;
+        let updateData = { ...value };
+        if (updateData.password) {
+          updateData.pwdHash = hashPwd(updateData.password);
+          delete updateData.password;
         }
         
-        // Ensure the user entry exists in the map
-        if (!setting.users) setting.users = new Map();
-        
         const existing = setting.users.get(key) || {};
-        setting.users.set(key, { ...existing, ...value });
+        setting.users.set(key, { ...existing, ...updateData });
       }
-      delete req.body.users; // Handled separately
+      setting.markModified('users');
+      delete req.body.users;
     }
 
     Object.assign(setting, req.body);
