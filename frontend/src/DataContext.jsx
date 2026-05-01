@@ -190,35 +190,43 @@ export const DataProvider = ({ children }) => {
 
   // SYNC WITH BACKEND
   useEffect(() => {
-    const fetchData = async () => {
-      try {
+        const fetchSafe = async (url) => {
+          try {
+            const r = await fetch(url);
+            if (!r.ok) return []; // Fallback to empty if 500
+            const json = await r.json();
+            return Array.isArray(json) ? json : (json.users ? json : []);
+          } catch (e) { return []; }
+        };
+
         const [inv, sls, exp, cf, hw, invs, pay, oi, ship, act, set] = await Promise.all([
-          fetch('/api/inventory').then(r => r.json()),
-          fetch('/api/sales').then(r => r.json()),
-          fetch('/api/expenses').then(r => r.json()),
-          fetch('/api/cashflow').then(r => r.json()),
-          fetch('/api/hawala').then(r => r.json()),
-          fetch('/api/investors').then(r => r.json()),
-          fetch('/api/payouts').then(r => r.json()),
-          fetch('/api/owner-investment').then(r => r.json()),
-          fetch('/api/shipments').then(r => r.json()),
-          fetch('/api/activity').then(r => r.json()),
-          fetch('/api/settings').then(r => r.json())
+          fetchSafe('/api/inventory'),
+          fetchSafe('/api/sales'),
+          fetchSafe('/api/expenses'),
+          fetchSafe('/api/cashflow'),
+          fetchSafe('/api/hawala'),
+          fetchSafe('/api/investors'),
+          fetchSafe('/api/payouts'),
+          fetchSafe('/api/owner-investment'),
+          fetchSafe('/api/shipments'),
+          fetchSafe('/api/activity'),
+          fetchSafe('/api/settings')
         ]);
 
-        setData({
-          inventory: inv,
-          sales: sls,
-          expenses: exp,
-          cashflow: cf,
-          hawala: hw,
-          investors: invs,
-          payouts: pay,
-          ownerInvestments: oi,
-          shipments: ship,
-          activity: act,
-          settings: set
-        });
+        setData(prev => ({
+          ...prev,
+          inventory: inv.length ? inv : prev.inventory,
+          sales: sls.length ? sls : prev.sales,
+          expenses: exp.length ? exp : prev.expenses,
+          cashflow: cf.length ? cf : prev.cashflow,
+          hawala: hw.length ? hw : prev.hawala,
+          investors: invs.length ? invs : prev.investors,
+          payouts: pay.length ? pay : prev.payouts,
+          ownerInvestments: oi.length ? oi : prev.ownerInvestments,
+          shipments: ship.length ? ship : prev.shipments,
+          activity: act.length ? act : prev.activity,
+          settings: (set && set.businessName) ? set : prev.settings
+        }));
       } catch (err) {
         console.error('Initial fetch error:', err);
       }
