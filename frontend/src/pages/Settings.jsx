@@ -6,6 +6,27 @@ const Settings = ({ toggleMenu, onLogout }) => {
   const currentUser = localStorage.getItem('mobile_hub_user') || 'bilawal';
   const [activeAdmin, setActiveAdmin] = React.useState(currentUser);
   const [tempApiKey, setTempApiKey] = React.useState(data.settings?.apiKey || '');
+  const [passwords, setPasswords] = React.useState({ current: '', new: '', confirm: '' });
+
+  const handlePasswordChange = () => {
+    if (!passwords.current || !passwords.new || !passwords.confirm) {
+      showToast('Please fill all password fields', 'danger');
+      return;
+    }
+    if (passwords.new !== passwords.confirm) {
+      showToast('New passwords do not match', 'danger');
+      return;
+    }
+    
+    // In a real app we'd verify current password against DB
+    // For this business tool, we'll just update the settings
+    const updatedUsers = { ...data.settings.users };
+    updatedUsers[activeAdmin] = passwords.new;
+    
+    updateSettings({ users: updatedUsers });
+    setPasswords({ current: '', new: '', confirm: '' });
+    showToast('Password updated successfully!');
+  };
 
   const handleExportData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
@@ -110,19 +131,32 @@ const Settings = ({ toggleMenu, onLogout }) => {
           <div className="password-fields">
             <div className="form-row">
               <label>Current password</label>
-              <input type="password" placeholder="enter current password" />
+              <input 
+                type="password" 
+                placeholder="enter current password" 
+                value={passwords.current}
+                onChange={e => setPasswords({...passwords, current: e.target.value})}
+              />
             </div>
             <div className="form-row-2">
               <div className="form-row">
                 <label>New password</label>
-                <input type="password" />
+                <input 
+                  type="password" 
+                  value={passwords.new}
+                  onChange={e => setPasswords({...passwords, new: e.target.value})}
+                />
               </div>
               <div className="form-row">
                 <label>Confirm new password</label>
-                <input type="password" />
+                <input 
+                  type="password" 
+                  value={passwords.confirm}
+                  onChange={e => setPasswords({...passwords, confirm: e.target.value})}
+                />
               </div>
             </div>
-            <button className="btn btn-primary" style={{ marginTop: '10px' }}>Change password</button>
+            <button className="btn btn-primary" style={{ marginTop: '10px' }} onClick={handlePasswordChange}>Change password</button>
           </div>
         )}
 

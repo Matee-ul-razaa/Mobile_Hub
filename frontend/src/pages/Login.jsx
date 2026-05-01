@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useData } from '../DataContext';
 
 const Login = ({ onLogin }) => {
+  const { data, logActivity } = useData();
   const [selectedUser, setSelectedUser] = useState(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,10 +18,12 @@ const Login = ({ onLogin }) => {
       return;
     }
 
-    // AUTH LOGIC (Using default 'admin' for demo or checking against API)
-    // For now, mirroring simple localStorage persistence
-    if (password === 'admin' || password === '123456') {
+    // Check against saved password or default 'admin'
+    const savedPassword = data.settings?.users?.[selectedUser] || 'admin';
+
+    if (password === savedPassword || password === '123456') {
       localStorage.setItem('mobile_hub_user', selectedUser);
+      logActivity('login', 'auth', `${selectedUser === 'nadeem' ? 'Nadeem' : 'Bilawal'} signed in`);
       onLogin(selectedUser);
     } else {
       setError(`✗ Incorrect password for ${selectedUser==='nadeem'?'Nadeem':'Bilawal'}.`);
