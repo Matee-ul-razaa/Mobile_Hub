@@ -200,6 +200,22 @@ export const DataProvider = ({ children }) => {
     });
   };
 
+  const wipeAllData = () => {
+    setData(prev => ({
+      ...prev,
+      inventory: [],
+      sales: [],
+      expenses: [],
+      cashflow: [],
+      activity: [],
+      payouts: [],
+      ownerInvestments: [],
+      shipments: [],
+      hawala: []
+    }));
+    showToast('All business data has been wiped.', 'danger');
+  };
+
   const value = {
     data, loading,
     addInventory, updateInventory, deleteInventory,
@@ -211,7 +227,7 @@ export const DataProvider = ({ children }) => {
     addShipment, updateShipment, deleteShipment,
     addOwnerInvestment, updateOwnerInvestment, deleteOwnerInvestment,
     addCashflow, updateCashflow, deleteCashflow,
-    updateSettings, logActivity, clearActivity,
+    updateSettings, logActivity, clearActivity, wipeAllData,
     showToast, showConfirm
   };
 

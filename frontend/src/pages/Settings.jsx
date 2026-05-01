@@ -2,7 +2,7 @@ import React from 'react';
 import { useData } from '../DataContext';
 
 const Settings = ({ toggleMenu, onLogout }) => {
-  const { data, setData, updateSettings, clearActivity, showToast, showConfirm } = useData();
+  const { data, updateSettings, clearActivity, wipeAllData, showToast, showConfirm } = useData();
   const currentUser = localStorage.getItem('mobile_hub_user') || 'bilawal';
   const [activeAdmin, setActiveAdmin] = React.useState(currentUser);
   const [tempApiKey, setTempApiKey] = React.useState(data.settings?.apiKey || '');
@@ -183,10 +183,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
         <div className="card-header"><h3 className="card-title" style={{ color: 'var(--red)' }}>Danger Zone</h3></div>
         <div className="page-sub" style={{ padding: '0 0 16px' }}>Delete every record — inventory, sales, expenses, investors, everything.</div>
         <button className="btn btn-sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--red)', border: '1px solid var(--red-soft)' }} onClick={() => {
-          showConfirm('WIPE ALL DATA? This is permanent.', () => {
-            setData({ ...data, inventory: [], sales: [], expenses: [], cashflow: [], activity: [], payouts: [], ownerInvestments: [], shipments: [], hawala: [] });
-            showToast('All data wiped.', 'danger');
-          });
+          showConfirm('WIPE ALL DATA? This is permanent.', wipeAllData);
         }}>Reset all data</button>
       </div>
     </div>
