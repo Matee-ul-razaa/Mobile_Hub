@@ -104,28 +104,22 @@ router.post('/auth/login', async (req, res) => {
   if (!user || !password) return res.status(400).json({ error: 'Username and password required' });
   try {
     let setting = await Setting.findOne();
-    
-    // If no settings or no users, create/update with defaults
-    if (!setting || !setting.users || setting.users.size === 0 || !setting.users.has(user)) {
-      console.log('User missing or map empty. Injecting defaults...');
-      const defaults = {
-        nadeem: { name: 'Nadeem', role: 'Admin', pwdHash: hashPwd('admin') },
-        bilawal: { name: 'Bilawal', role: 'Admin', pwdHash: hashPwd('admin') }
-      };
-      if (!setting) {
-        setting = await Setting.create({ users: defaults });
-      } else {
-        // Aggressively ensure both users exist
-        if (!setting.users) setting.users = new Map();
-        setting.users.set('nadeem', defaults.nadeem);
-        setting.users.set('bilawal', defaults.bilawal);
-        await setting.save();
-      }
+    if (!setting) setting = await Setting.create({ users: {} });
+    if (!setting.users) setting.users = new Map();
+
+    // Only inject default if the SPECIFIC user is missing
+    if (!setting.users.has(user)) {
+      console.log(`User ${user} missing. Injecting default...`);
+      setting.users.set(user, { 
+        name: user === 'nadeem' ? 'Nadeem' : 'Bilawal', 
+        role: 'Admin', 
+        pwdHash: hashPwd('admin') 
+      });
+      setting.markModified('users');
+      await setting.save();
     }
 
     const userData = setting.users.get(user);
-    if (!userData) return res.status(404).json({ error: 'User profile not found. Please reset settings.' });
-    
     if (hashPwd(password) === userData.pwdHash) {
       res.json({ success: true, user: userData });
     } else {
