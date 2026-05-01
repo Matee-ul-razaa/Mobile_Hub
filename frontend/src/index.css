@@ -537,9 +537,13 @@ tr:hover td {
     padding: 16px 16px 0 16px;
   }
   
-  .form-row, .form-row-2 {
+  .form-row {
     padding-left: 16px !important;
     padding-right: 16px !important;
+  }
+  .form-row-2 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }
 
@@ -609,6 +613,8 @@ textarea {
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 14px;
+  width: 100%;
+  outline: none;
 }
 
 .modal-actions {
