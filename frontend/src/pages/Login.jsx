@@ -69,9 +69,7 @@ const Login = ({ onLogin }) => {
           Sign in
         </button>
 
-        <div className="login-footer">
-          Default password for first-time login: <code>admin</code> · change it in Settings after sign-in
-        </div>
+
       </div>
     </div>
   );
