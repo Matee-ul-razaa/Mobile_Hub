@@ -61,7 +61,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
         <div className="card-header"><h3 className="card-title">Business Info</h3></div>
         <div className="form-row">
           <label>Business Name</label>
-          <input value="Mobile Hub" placeholder="e.g. Mobile Hub" />
+          <input defaultValue="Mobile Hub" placeholder="e.g. Mobile Hub" />
         </div>
         <div className="form-row">
           <label>Owner Name</label>
