@@ -6,13 +6,11 @@ const settingSchema = new mongoose.Schema({
   apiKey: { type: String, default: '' }, // For Anthropic
   aiModel: { type: String, default: 'claude-haiku-4-5' },
   users: {
-    type: Map,
-    of: new mongoose.Schema({
-      name: String,
-      role: String,
-      pwdHash: String
-    }),
-    default: {}
+    type: Object,
+    default: {
+      nadeem: { name: 'Nadeem', role: 'Admin', pwdHash: '6j6l3m' }, // 'admin' hash
+      bilawal: { name: 'Bilawal', role: 'Admin', pwdHash: '6j6l3m' }
+    }
   }
 }, { timestamps: true });
 

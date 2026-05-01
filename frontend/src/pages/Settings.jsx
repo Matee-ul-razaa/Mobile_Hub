@@ -130,8 +130,10 @@ const Settings = ({ toggleMenu, onLogout }) => {
         {activeAdmin === currentUser && (
           <div className="password-fields">
             <div className="form-row">
-              <label>Current password</label>
+              <label htmlFor="current-pwd">Current password</label>
               <input 
+                id="current-pwd"
+                name="current-pwd"
                 type="password" 
                 placeholder="enter current password" 
                 value={passwords.current}
@@ -140,16 +142,20 @@ const Settings = ({ toggleMenu, onLogout }) => {
             </div>
             <div className="form-row-2">
               <div className="form-row">
-                <label>New password</label>
+                <label htmlFor="new-pwd">New password</label>
                 <input 
+                  id="new-pwd"
+                  name="new-pwd"
                   type="password" 
                   value={passwords.new}
                   onChange={e => setPasswords({...passwords, new: e.target.value})}
                 />
               </div>
               <div className="form-row">
-                <label>Confirm new password</label>
+                <label htmlFor="confirm-pwd">Confirm new password</label>
                 <input 
+                  id="confirm-pwd"
+                  name="confirm-pwd"
                   type="password" 
                   value={passwords.confirm}
                   onChange={e => setPasswords({...passwords, confirm: e.target.value})}

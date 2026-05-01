@@ -71,8 +71,10 @@ const Login = ({ onLogin }) => {
         {error && <div className="login-error">{error}</div>}
 
         <div className="form-row">
-          <label>Password</label>
+          <label htmlFor="login-pwd">Password</label>
           <input 
+            id="login-pwd"
+            name="password"
             type="password" 
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 

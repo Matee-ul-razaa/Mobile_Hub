@@ -104,22 +104,28 @@ router.post('/auth/login', async (req, res) => {
   if (!user || !password) return res.status(400).json({ error: 'Username and password required' });
   try {
     let setting = await Setting.findOne();
-    if (!setting) setting = await Setting.create({ users: {} });
-    if (!setting.users) setting.users = new Map();
+    if (!setting) {
+      setting = await Setting.create({
+        users: {
+          nadeem: { name: 'Nadeem', role: 'Admin', pwdHash: hashPwd('admin') },
+          bilawal: { name: 'Bilawal', role: 'Admin', pwdHash: hashPwd('admin') }
+        }
+      });
+    }
 
-    // Only inject default if the SPECIFIC user is missing
-    if (!setting.users.has(user)) {
-      console.log(`User ${user} missing. Injecting default...`);
-      setting.users.set(user, { 
+    const userData = setting.users[user];
+    if (!userData) {
+      // If user is missing from existing settings, add them
+      setting.users[user] = { 
         name: user === 'nadeem' ? 'Nadeem' : 'Bilawal', 
         role: 'Admin', 
         pwdHash: hashPwd('admin') 
-      });
+      };
       setting.markModified('users');
       await setting.save();
+      return res.status(401).json({ error: 'Default account created. Please try again with password "admin"' });
     }
 
-    const userData = setting.users.get(user);
     if (hashPwd(password) === userData.pwdHash) {
       res.json({ success: true, user: userData });
     } else {
@@ -155,7 +161,7 @@ router.put('/settings', async (req, res) => {
 
     // Special handling for users map to hash passwords if they are updated
     if (req.body.users) {
-      if (!setting.users) setting.users = new Map();
+      if (!setting.users) setting.users = {};
       for (const [key, value] of Object.entries(req.body.users)) {
         let updateData = { ...value };
         if (updateData.password) {
@@ -163,8 +169,7 @@ router.put('/settings', async (req, res) => {
           delete updateData.password;
         }
         
-        const existing = setting.users.get(key) || {};
-        setting.users.set(key, { ...existing, ...updateData });
+        setting.users[key] = { ...(setting.users[key] || {}), ...updateData };
       }
       setting.markModified('users');
       delete req.body.users;
