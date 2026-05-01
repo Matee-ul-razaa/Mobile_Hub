@@ -259,6 +259,18 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const clearActivity = async () => {
+    showConfirm('Clear all activity logs? This cannot be undone.', async () => {
+      try {
+        await fetch('/api/activity', { method: 'DELETE' });
+        setData(prev => ({ ...prev, activity: [] }));
+        showToast('Activity logs cleared');
+      } catch (err) {
+        showToast('Failed to clear logs', 'danger');
+      }
+    });
+  };
+
   const value = {
     data, loading,
     addInventory, updateInventory, deleteInventory,

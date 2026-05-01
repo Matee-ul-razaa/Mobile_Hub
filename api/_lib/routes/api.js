@@ -198,4 +198,11 @@ router.post('/reset-all', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.delete('/activity', async (req, res) => {
+  try {
+    await Activity.deleteMany({});
+    res.json({ message: 'Activity logs cleared' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
