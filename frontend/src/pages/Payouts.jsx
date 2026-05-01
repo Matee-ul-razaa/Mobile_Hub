@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, fmtNum, agg } from '../utils';
 
-const Payouts = ({ toggleMenu }) => {
+const Payouts = ({ toggleMenu, onLogout }) => {
   const { data, addPayout, deletePayout } = useData();
   const [showModal, setShowModal] = useState(false);
 
@@ -15,54 +15,90 @@ const Payouts = ({ toggleMenu }) => {
           <button className="menu-toggle" onClick={toggleMenu}>☰</button>
           <div>
             <h1 className="page-title">Investor Payouts</h1>
-            <div className="page-sub">Monthly profit distributions</div>
+            <div className="page-sub">Record of monthly payments to investors</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Record Payout</button>
+          <button className="btn btn-danger" onClick={onLogout}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
         </div>
       </div>
 
       <div className="kpi-grid">
         <div className="kpi">
-          <div className="kpi-label">Total Paid (KRW)</div>
+          <div className="kpi-label">TOTAL PAID (PK)</div>
+          <div className="kpi-value">₨{fmtNum(a.totalPaidPKR)}</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">TOTAL PAID (KR)</div>
           <div className="kpi-value neg">{fmtKRW(a.totalPaid)}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Total Paid (PKR)</div>
-          <div className="kpi-value">₨{fmtNum(a.totalPaidPKR)}</div>
+          <div className="kpi-label">ENTRIES</div>
+          <div className="kpi-value">{data.payouts.length}</div>
         </div>
       </div>
 
-      <div className="card">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Investor</th>
-                <th className="num">Amount (KRW)</th>
-                <th className="num">Paid in (PKR)</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...data.payouts].reverse().map(p => {
-                const inv = data.investors.find(i => i._id === p.investorId);
-                return (
-                  <tr key={p._id}>
-                    <td>{p.date}</td>
-                    <td><strong>{inv ? inv.name : 'Unknown'}</strong></td>
-                    <td className="num neg"><strong>−{fmtKRW(p.amount)}</strong></td>
-                    <td className="num">₨{fmtNum(p.amountPKR)}</td>
-                    <td>
-                      <button className="btn btn-sm btn-danger" onClick={() => deletePayout(p._id)}>Del</button>
+      <div className="chart-grid">
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">All Payouts</h3></div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>INVESTOR</th>
+                  <th className="num">PKR (PAID IN PK)</th>
+                  <th className="num">KRW (FROM YOUR CASH)</th>
+                  <th>NOTE</th>
+                  <th>ADDED BY</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.payouts.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-3)' }}>
+                      No payouts yet.
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ) : (
+                  [...data.payouts].reverse().map(p => {
+                    const inv = data.investors.find(i => i._id === p.investorId);
+                    return (
+                      <tr key={p._id}>
+                        <td>{p.date}</td>
+                        <td><strong>{inv ? inv.name : 'Unknown'}</strong></td>
+                        <td className="num">₨{fmtNum(p.amountPKR)}</td>
+                        <td className="num neg"><strong>−{fmtKRW(p.amount)}</strong></td>
+                        <td>{p.note || '—'}</td>
+                        <td><span className="badge badge-brand">Admin</span></td>
+                        <td>
+                          <div className="inline-actions">
+                            <button className="btn btn-sm btn-danger" onClick={() => deletePayout(p._id)}>Del</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">Paid by Month</h3></div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100px', color: 'var(--text-3)' }}>
+            —
+          </div>
         </div>
       </div>
 

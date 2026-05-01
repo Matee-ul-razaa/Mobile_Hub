@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 
-const Cashflow = ({ toggleMenu }) => {
+const Cashflow = ({ toggleMenu, onLogout }) => {
   const { data, addCashflow, deleteCashflow } = useData();
   const [showModal, setShowModal] = useState(false);
 
@@ -15,32 +15,53 @@ const Cashflow = ({ toggleMenu }) => {
           <button className="menu-toggle" onClick={toggleMenu}>☰</button>
           <div>
             <h1 className="page-title">Cash In / Out</h1>
-            <div className="page-sub">Daily ledger of all Won transactions</div>
+            <div className="page-sub">Complete money movement record</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ New Transaction</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Entry</button>
+          <button className="btn btn-danger" onClick={onLogout}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
         </div>
       </div>
 
       <div className="kpi-grid">
         <div className="kpi">
-          <div className="kpi-label">Current Won Balance</div>
-          <div className={`kpi-value ${a.cashInHand >= 0 ? 'pos' : 'neg'}`}>{fmtKRW(a.cashInHand)}</div>
-          <div className="kpi-sub">Total physical cash availability</div>
+          <div className="kpi-label">TOTAL CASH IN</div>
+          <div className="kpi-value pos">{fmtKRW(a.totalCashIn)}</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">TOTAL CASH OUT</div>
+          <div className="kpi-value neg">{fmtKRW(a.totalCashOut)}</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">NET</div>
+          <div className="kpi-value brand">{fmtKRW(a.cashInHand)}</div>
         </div>
       </div>
 
       <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">All Cash Movement</h3>
+          <div className="muted" style={{ fontSize: '11px' }}>Includes manual entries, Fazi Cash, expenses, payouts</div>
+        </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Note</th>
-                <th className="num">Amount</th>
-                <th>Actions</th>
+                <th>DATE</th>
+                <th>TYPE</th>
+                <th>SOURCE / DETAIL</th>
+                <th>ORIGIN</th>
+                <th>NOTE</th>
+                <th className="num">AMOUNT</th>
+                <th>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -48,16 +69,20 @@ const Cashflow = ({ toggleMenu }) => {
                 <tr key={c._id}>
                   <td>{c.date}</td>
                   <td>
-                    <span className={`badge badge-${c.type === 'in' ? 'green' : 'red'}`}>
-                      {c.type === 'in' ? 'CASH IN' : 'CASH OUT'}
+                    <span className={`badge badge-${c.type === 'in' ? 'green' : 'red'}`} style={{ fontSize: '9px', padding: '2px 4px' }}>
+                      {c.type === 'in' ? 'IN' : 'OUT'}
                     </span>
                   </td>
+                  <td>{c.source || '—'}</td>
+                  <td><span className="badge" style={{ background: 'var(--surface-2)', color: 'var(--text-3)', fontSize: '10px' }}>{c.origin || 'Manual'}</span></td>
                   <td>{c.note}</td>
                   <td className={`num ${c.type === 'in' ? 'pos' : 'neg'}`}>
                     <strong>{c.type === 'in' ? '+' : '−'}{fmtKRW(c.amount)}</strong>
                   </td>
                   <td>
-                    <button className="btn btn-sm btn-danger" onClick={() => deleteCashflow(c._id)}>Del</button>
+                    <div className="inline-actions">
+                      <button className="btn btn-sm btn-danger" onClick={() => deleteCashflow(c._id)}>Del</button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -3,8 +3,8 @@ import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 import * as XLSX from 'xlsx';
 
-const Inventory = ({ toggleMenu }) => {
-  const { data, addInventory, updateInventory, deleteInventory } = useData();
+const Inventory = ({ toggleMenu, onLogout }) => {
+  const { data, addInventory, updateInventory, deleteInventory, showToast } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
@@ -51,7 +51,7 @@ const Inventory = ({ toggleMenu }) => {
           });
         }
       }
-      alert('Import successful!');
+      showToast('Import successful!');
     };
     reader.readAsBinaryString(file);
   };
@@ -63,30 +63,39 @@ const Inventory = ({ toggleMenu }) => {
           <button className="menu-toggle" onClick={toggleMenu}>☰</button>
           <div>
             <h1 className="page-title">Inventory</h1>
-            <div className="page-sub">Manage your stock in Korea</div>
+            <div className="page-sub">Stock of mobile phones in hand</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button className="btn">⬇ Template</button>
           <button className="btn" onClick={handleExport}>⬇ Export Excel</button>
           <label className="btn" style={{ cursor: 'pointer' }}>
             ⬆ Import Excel
             <input type="file" style={{ display: 'none' }} onChange={handleImport} accept=".xlsx,.xls" />
           </label>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Add Item</button>
+          <button className="btn btn-danger" onClick={onLogout}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
         </div>
       </div>
 
       <div className="kpi-grid">
         <div className="kpi">
-          <div className="kpi-label">Total Items</div>
+          <div className="kpi-label">TOTAL ITEMS</div>
           <div className="kpi-value">{data.inventory.length}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Units In Stock</div>
+          <div className="kpi-label">UNITS IN STOCK</div>
           <div className="kpi-value brand">{a.invUnits}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Inventory Value</div>
+          <div className="kpi-label">INVENTORY VALUE</div>
           <div className="kpi-value">{fmtKRW(a.invValue)}</div>
         </div>
       </div>
@@ -96,13 +105,15 @@ const Inventory = ({ toggleMenu }) => {
           <table>
             <thead>
               <tr>
-                <th>Model</th>
-                <th className="num">Bought</th>
-                <th className="num">Sold</th>
-                <th className="num">Stock</th>
-                <th className="num">Cost/Unit</th>
-                <th className="num">Value</th>
-                <th>Actions</th>
+                <th>MODEL</th>
+                <th className="num">BOUGHT</th>
+                <th className="num">SOLD</th>
+                <th className="num">IN STOCK</th>
+                <th className="num">COST/UNIT</th>
+                <th className="num">STOCK VALUE</th>
+                <th>NOTES</th>
+                <th>ADDED BY</th>
+                <th>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -110,13 +121,15 @@ const Inventory = ({ toggleMenu }) => {
                 <tr key={item._id}>
                   <td>
                     <strong>{item.model}</strong>
-                    <div className="muted" style={{ fontSize: '11px' }}>{item.brand} {item.sku && `· ${item.sku}`}</div>
+                    <div className="muted" style={{ fontSize: '11px' }}>{item.brand} - {item.sku}</div>
                   </td>
                   <td className="num">{item.qty}</td>
                   <td className="num">{item.soldQty || 0}</td>
                   <td className="num"><strong>{item.qty - (item.soldQty || 0)}</strong></td>
                   <td className="num">{fmtKRW(item.costPerUnit)}</td>
                   <td className="num">{fmtKRW((item.qty - (item.soldQty || 0)) * item.costPerUnit)}</td>
+                  <td>{item.notes || '—'}</td>
+                  <td><span className="badge badge-brand">{item.createdBy || '—'}</span></td>
                   <td>
                     <div className="inline-actions">
                       <button className="btn btn-sm" onClick={() => { setEditingItem(item); setShowModal(true); }}>Edit</button>
@@ -146,13 +159,16 @@ const Inventory = ({ toggleMenu }) => {
 };
 
 const InventoryModal = ({ item, onClose, onSave }) => {
-  const [form, setForm] = useState(item || { model: '', brand: '', sku: '', qty: 0, costPerUnit: 0, notes: '' });
+  const [form, setForm] = useState(item || { date: new Date().toISOString().slice(0,10), model: '', brand: '', sku: '', qty: 0, costPerUnit: 0, notes: '' });
 
   return (
     <div className="modal-overlay">
       <div className="modal">
         <div className="card-header"><h3 className="card-title">{item ? 'Edit' : 'Add'} Inventory Item</h3></div>
-        <div className="form-row"><label>Model *</label><input value={form.model} onChange={e=>setForm({...form, model:e.target.value})} /></div>
+        <div className="form-row-2">
+          <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
+          <div className="form-row"><label>Model *</label><input value={form.model} onChange={e=>setForm({...form, model:e.target.value})} /></div>
+        </div>
         <div className="form-row-2">
           <div className="form-row"><label>Brand</label><input value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} /></div>
           <div className="form-row"><label>SKU</label><input value={form.sku} onChange={e=>setForm({...form, sku:e.target.value})} /></div>

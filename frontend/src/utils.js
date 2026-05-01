@@ -15,8 +15,8 @@ export const agg = (data) => {
   const ownerInvestments = data.ownerInvestments || [];
   const cashflow = data.cashflow || [];
 
-  const invValue = inventory.reduce((a,x)=> a + Math.max(0,(x.qty - x.soldQty)) * x.costPerUnit, 0);
-  const invUnits = inventory.reduce((a,x)=> a + Math.max(0,(x.qty - x.soldQty)), 0);
+  const invValue = inventory.reduce((a, x) => a + Math.max(0, ((Number(x.qty) || 0) - (Number(x.soldQty) || 0))) * (Number(x.costPerUnit) || 0), 0);
+  const invUnits = inventory.reduce((a, x) => a + Math.max(0, ((Number(x.qty) || 0) - (Number(x.soldQty) || 0))), 0);
   const salesRev = sales.reduce((a,x)=> a + x.qty * x.pricePerUnit, 0);
   
   const salesCOGS = sales.reduce((a,x)=>{

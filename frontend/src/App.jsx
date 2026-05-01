@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useData } from './DataContext';
 import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -21,6 +22,7 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { logActivity, showConfirm } = useData();
 
   useEffect(() => {
     if (!user && location.pathname !== '/login') {
@@ -30,15 +32,16 @@ function App() {
 
   const handleLogin = (u) => {
     setUser(u);
+    logActivity('login', 'auth', `${u === 'nadeem' ? 'Nadeem' : 'Bilawal'} signed in`);
     navigate('/');
   };
 
   const handleLogout = () => {
-    if (window.confirm('Sign out?')) {
+    showConfirm('Are you sure you want to sign out?', () => {
       localStorage.removeItem('mobile_hub_user');
       setUser(null);
       navigate('/login');
-    }
+    });
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -62,7 +65,7 @@ function App() {
           <div className="brand-logo">MH</div>
           <div>
             <div className="brand-title">Mobile Hub</div>
-            <div className="brand-sub">Korea → Pakistan Exports</div>
+            <div className="brand-sub">Korea ↔ Pakistan Exports</div>
           </div>
         </div>
 
@@ -111,32 +114,41 @@ function App() {
           </NavLink>
         </nav>
 
-        <div className="user-chip">
-          <div className={`avatar ${avatarClass}`}>{initial}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="u-name">{fullName}</div>
-            <div className="u-role">Admin</div>
+        <div className="sidebar-footer">
+          <div className="user-chip">
+            <div className={`avatar ${avatarClass}`}>{initial}</div>
+            <div className="user-info">
+              <div className="user-name">{fullName}</div>
+              <div className="user-role">Admin</div>
+            </div>
+            <button className="logout-btn" onClick={handleLogout}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign out
+            </button>
           </div>
-          <button type="button" className="logout-btn" onClick={handleLogout}>Sign out</button>
         </div>
       </aside>
 
       <main className="page-body">
         <Routes>
-          <Route path="/" element={<Dashboard toggleMenu={toggleMenu} />} />
-          <Route path="/inventory" element={<Inventory toggleMenu={toggleMenu} />} />
-          <Route path="/sales" element={<Sales toggleMenu={toggleMenu} />} />
-          <Route path="/expenses" element={<Expenses toggleMenu={toggleMenu} />} />
-          <Route path="/cashflow" element={<Cashflow toggleMenu={toggleMenu} />} />
-          <Route path="/fazi-cash" element={<Hawala toggleMenu={toggleMenu} />} />
-          <Route path="/investors" element={<Investors toggleMenu={toggleMenu} />} />
-          <Route path="/owner-investment" element={<MyInvestment toggleMenu={toggleMenu} />} />
-          <Route path="/payouts" element={<Payouts toggleMenu={toggleMenu} />} />
-          <Route path="/shipments" element={<Shipments toggleMenu={toggleMenu} />} />
-          <Route path="/ai-assistant" element={<AIAssistant toggleMenu={toggleMenu} />} />
-          <Route path="/activity-log" element={<ActivityLog toggleMenu={toggleMenu} />} />
-          <Route path="/settings" element={<Settings toggleMenu={toggleMenu} />} />
-          <Route path="/capital" element={<Capital toggleMenu={toggleMenu} />} />
+          <Route path="/" element={<Dashboard toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/inventory" element={<Inventory toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/sales" element={<Sales toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/expenses" element={<Expenses toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/cashflow" element={<Cashflow toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/fazi-cash" element={<Hawala toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/investors" element={<Investors toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/owner-investment" element={<MyInvestment toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/payouts" element={<Payouts toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/shipments" element={<Shipments toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/ai-assistant" element={<AIAssistant toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/activity-log" element={<ActivityLog toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/settings" element={<Settings toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/capital" element={<Capital toggleMenu={toggleMenu} onLogout={handleLogout} />} />
         </Routes>
       </main>
     </div>

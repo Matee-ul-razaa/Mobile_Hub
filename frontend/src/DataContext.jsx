@@ -23,11 +23,11 @@ const defaultData = {
   ],
   hawala: [],
   investors: [
-    { _id: uid(), name: 'Investor 1', contact: '', capitalPKR: 2000000, capital: 10000000, monthlyPayoutPKR: 60000, monthlyPayout: 300000, startDate: todayISO(), notes: '' },
-    { _id: uid(), name: 'Investor 2', contact: '', capitalPKR: 1600000, capital: 8000000, monthlyPayoutPKR: 48000, monthlyPayout: 240000, startDate: todayISO(), notes: '' },
-    { _id: uid(), name: 'Investor 3', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: todayISO(), notes: '' },
-    { _id: uid(), name: 'Investor 4', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: todayISO(), notes: '' },
-    { _id: uid(), name: 'Investor 5', contact: '', capitalPKR: 800000, capital: 4000000, monthlyPayoutPKR: 24000, monthlyPayout: 120000, startDate: todayISO(), notes: '' },
+    { _id: uid(), name: 'Investor 1', contact: '', capitalPKR: 2000000, capital: 10000000, monthlyPayoutPKR: 60000, monthlyPayout: 300000, startDate: '2026-04-30', notes: '' },
+    { _id: uid(), name: 'Investor 2', contact: '', capitalPKR: 1600000, capital: 8000000, monthlyPayoutPKR: 48000, monthlyPayout: 240000, startDate: '2026-04-30', notes: '' },
+    { _id: uid(), name: 'Investor 3', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: '2026-04-30', notes: '' },
+    { _id: uid(), name: 'Investor 4', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: '2026-04-30', notes: '' },
+    { _id: uid(), name: 'Investor 5', contact: '', capitalPKR: 800000, capital: 4000000, monthlyPayoutPKR: 24000, monthlyPayout: 120000, startDate: '2026-04-30', notes: '' },
   ],
   payouts: [],
   ownerInvestments: [],
@@ -37,12 +37,23 @@ const defaultData = {
 };
 
 export const DataProvider = ({ children }) => {
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const showConfirm = (msg, onConfirm) => {
+    setConfirmDialog({ msg, onConfirm });
+  };
+
   const [data, setData] = useState(() => {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultData;
     try {
       const parsed = JSON.parse(raw);
-      // Ensure all keys exist
       for (const k in defaultData) if (!(k in parsed)) parsed[k] = defaultData[k];
       return parsed;
     } catch (e) {
@@ -56,13 +67,14 @@ export const DataProvider = ({ children }) => {
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
   }, [data]);
 
-  const logActivity = (action, entity, detail) => {
+  const logActivity = (action, entity, detail, amount = null) => {
     const newAct = {
       at: new Date().toISOString(),
       user: localStorage.getItem('mobile_hub_user') || 'system',
       action,
       entity,
-      detail
+      detail,
+      amount
     };
     setData(prev => ({
       ...prev,
@@ -70,14 +82,15 @@ export const DataProvider = ({ children }) => {
     }));
   };
 
-  // GENERIC CRUD HELPERS
+
   const addItem = (key, obj) => {
     const newObj = { ...obj, _id: uid() };
     setData(prev => ({
       ...prev,
       [key]: [...prev[key], newObj]
     }));
-    logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+    logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || (obj.qty * (obj.pricePerUnit || obj.costPerUnit)) || null);
+    showToast('Saved successfully');
     return newObj;
   };
 
@@ -87,25 +100,29 @@ export const DataProvider = ({ children }) => {
       [key]: prev[key].map(item => item._id === id ? { ...item, ...obj } : item)
     }));
     logActivity('update', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+    showToast('Updated successfully');
   };
 
   const deleteItem = (key, id) => {
-    const itemToDelete = data[key].find(i => i._id === id);
-    setData(prev => ({
-      ...prev,
-      [key]: prev[key].filter(item => item._id !== id)
-    }));
-    logActivity('delete', key, itemToDelete?.model || itemToDelete?.buyer || itemToDelete?.category || itemToDelete?.name || 'item');
+    showConfirm('Are you sure you want to delete this record?', () => {
+      const itemToDelete = data[key].find(i => i._id === id);
+      setData(prev => ({
+        ...prev,
+        [key]: prev[key].filter(item => item._id !== id)
+      }));
+      logActivity('delete', key, itemToDelete?.model || itemToDelete?.buyer || itemToDelete?.category || itemToDelete?.name || 'item');
+      showToast('Deleted successfully', 'danger');
+    });
   };
 
-  // SPECIFIC WRAPPERS (To match existing page calls)
+
   const addInventory = (obj) => addItem('inventory', obj);
   const updateInventory = (id, obj) => updateItem('inventory', id, obj);
   const deleteInventory = (id) => deleteItem('inventory', id);
 
   const addSale = (obj) => {
     const res = addItem('sales', obj);
-    // Sync inventory sold count
+
     setData(prev => ({
       ...prev,
       inventory: prev.inventory.map(i => i.model === obj.model ? { ...i, soldQty: (i.soldQty || 0) + obj.qty } : i)
@@ -176,8 +193,15 @@ export const DataProvider = ({ children }) => {
     logActivity('update', 'settings', 'Business settings updated');
   };
 
-  const value = { 
-    data, loading, 
+  const clearActivity = () => {
+    showConfirm('Clear all activity logs? This cannot be undone.', () => {
+      setData(prev => ({ ...prev, activity: [] }));
+      showToast('Activity logs cleared');
+    });
+  };
+
+  const value = {
+    data, loading,
     addInventory, updateInventory, deleteInventory,
     addSale, updateSale, deleteSale,
     addExpense, updateExpense, deleteExpense,
@@ -187,12 +211,49 @@ export const DataProvider = ({ children }) => {
     addShipment, updateShipment, deleteShipment,
     addOwnerInvestment, updateOwnerInvestment, deleteOwnerInvestment,
     addCashflow, updateCashflow, deleteCashflow,
-    updateSettings
+    updateSettings, logActivity, clearActivity,
+    showToast, showConfirm
   };
 
   return (
     <DataContext.Provider value={value}>
       {children}
+      
+      {toast && (
+        <div className="custom-toast" style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: toast.type === 'danger' ? 'var(--red)' : 'var(--teal)',
+          color: '#fff',
+          padding: '20px 40px',
+          borderRadius: '12px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+          zIndex: 9999,
+          fontWeight: 'bold',
+          fontSize: '18px',
+          textAlign: 'center',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          {toast.msg}
+        </div>
+      )}
+
+      {confirmDialog && (
+        <div className="backdrop show" style={{ zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ maxWidth: '400px', width: '90%', textAlign: 'center', padding: '30px' }}>
+            <h3 style={{ marginBottom: '20px', fontSize: '18px' }}>{confirmDialog.msg}</h3>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button className="btn" onClick={() => setConfirmDialog(null)}>Cancel</button>
+              <button className="btn btn-danger" onClick={() => {
+                confirmDialog.onConfirm();
+                setConfirmDialog(null);
+              }}>Yes, Proceed</button>
+            </div>
+          </div>
+        </div>
+      )}
     </DataContext.Provider>
   );
 };

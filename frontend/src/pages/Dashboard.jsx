@@ -2,12 +2,12 @@ import React from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, fmtNum, agg, ym } from '../utils';
 import { Link } from 'react-router-dom';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell 
+  PieChart, Pie, Cell
 } from 'recharts';
 
-const Dashboard = ({ toggleMenu }) => {
+const Dashboard = ({ toggleMenu, onLogout }) => {
   const { data } = useData();
   const a = agg(data);
 
@@ -20,33 +20,33 @@ const Dashboard = ({ toggleMenu }) => {
       months.push(dd.toISOString().slice(0, 7));
     }
     return months.map(m => {
-      const inflow = (data.hawala||[]).filter(h => ym(h.date) === m).reduce((s, x) => s + (x.amountKRW||0), 0) +
-                     (data.cashflow||[]).filter(c => c.type === 'in' && ym(c.date) === m).reduce((s, x) => s + (x.amount||0), 0) +
-                     (data.ownerInvestments||[]).filter(o => ym(o.date) === m).reduce((s, x) => s + (x.amountKRW||0), 0);
-      const outflow = (data.expenses||[]).filter(e => ym(e.date) === m).reduce((s, x) => s + (x.amount||0), 0) +
-                      (data.cashflow||[]).filter(c => c.type === 'out' && ym(c.date) === m).reduce((s, x) => s + (x.amount||0), 0) +
-                      (data.payouts||[]).filter(p => ym(p.date) === m).reduce((s, x) => s + (x.amount||0), 0);
+      const inflow = (data.hawala || []).filter(h => ym(h.date) === m).reduce((s, x) => s + (x.amountKRW || 0), 0) +
+        (data.cashflow || []).filter(c => c.type === 'in' && ym(c.date) === m).reduce((s, x) => s + (x.amount || 0), 0) +
+        (data.ownerInvestments || []).filter(o => ym(o.date) === m).reduce((s, x) => s + (x.amountKRW || 0), 0);
+      const outflow = (data.expenses || []).filter(e => ym(e.date) === m).reduce((s, x) => s + (x.amount || 0), 0) +
+        (data.cashflow || []).filter(c => c.type === 'out' && ym(c.date) === m).reduce((s, x) => s + (x.amount || 0), 0) +
+        (data.payouts || []).filter(p => ym(p.date) === m).reduce((s, x) => s + (x.amount || 0), 0);
       return { name: m, In: inflow, Out: outflow };
     });
   };
 
   const getExpenseData = () => {
     const byCat = {};
-    (data.expenses||[]).forEach(e => byCat[e.category] = (byCat[e.category] || 0) + e.amount);
+    (data.expenses || []).forEach(e => byCat[e.category] = (byCat[e.category] || 0) + e.amount);
     return Object.entries(byCat).map(([name, value]) => ({ name, value }));
   };
 
   const getSalesProfitData = () => {
-    return (data.sales||[]).slice(-8).map((s, i) => {
+    return (data.sales || []).slice(-8).map((s, i) => {
       const rev = s.qty * s.pricePerUnit;
       const it = data.inventory.find(inv => inv.model === s.model);
       const cost = s.qty * (it ? it.costPerUnit : 0);
-      return { name: `#${i+1} ${s.buyer.slice(0, 8)}`, Revenue: rev, Profit: rev - cost };
+      return { name: `#${i + 1} ${s.buyer.slice(0, 8)}`, Revenue: rev, Profit: rev - cost };
     });
   };
 
   const getInvestorShare = () => {
-    return (data.investors||[]).map(inv => ({ name: inv.name, value: inv.capital }));
+    return (data.investors || []).map(inv => ({ name: inv.name, value: inv.capital }));
   };
 
   const COLORS = ['#1e40af', '#047857', '#b45309', '#6d28d9', '#0f766e', '#b91c1c', '#db2777', '#0891b2'];
@@ -61,6 +61,14 @@ const Dashboard = ({ toggleMenu }) => {
             <div className="page-sub">Overview of your business</div>
           </div>
         </div>
+        <button className="btn btn-danger btn-sm" onClick={onLogout}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sign out
+        </button>
       </div>
 
       <div className="kpi-grid">
@@ -77,7 +85,7 @@ const Dashboard = ({ toggleMenu }) => {
         <div className="kpi">
           <div className="kpi-label">Total Sales</div>
           <div className="kpi-value">{fmtKRW(a.salesRev)}</div>
-          <div className="kpi-sub">{(data.sales||[]).length} shipment(s)</div>
+          <div className="kpi-sub">{(data.sales || []).length} shipment(s)</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">Gross Profit</div>
@@ -117,12 +125,12 @@ const Dashboard = ({ toggleMenu }) => {
         <div className="kpi">
           <div className="kpi-label">Investor Capital</div>
           <div className="kpi-value purple">{fmtKRW(a.totalCapital)}</div>
-          <div className="kpi-sub">{(data.investors||[]).length} investors · ₨{fmtNum(a.totalCapitalPKR)} paid in PK</div>
+          <div className="kpi-sub">{(data.investors || []).length} investors · ₨{fmtNum(a.totalCapitalPKR)} paid in PK</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">Monthly Payout Due</div>
           <div className="kpi-value">{fmtKRW(a.totalMonthly)}</div>
-          <div className="kpi-sub">₨{fmtNum(a.totalMonthlyPKR||0)}/mo in PK · Total paid: {fmtKRW(a.totalPaid)}</div>
+          <div className="kpi-sub">₨{fmtNum(a.totalMonthlyPKR || 0)}/mo in PK · Total paid: {fmtKRW(a.totalPaid)}</div>
         </div>
       </div>
 
@@ -135,10 +143,16 @@ const Dashboard = ({ toggleMenu }) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" fontSize={11} />
                 <YAxis fontSize={11} tickFormatter={v => '₩' + (v / 1000).toFixed(0) + 'k'} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="In" fill="#047857" name="Cash In" />
-                <Bar dataKey="Out" fill="#b91c1c" name="Cash Out" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#111827', border: 'none', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
+                  itemStyle={{ color: '#fff', fontSize: '13px' }}
+                  labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
+                  cursor={{ fill: 'transparent' }} 
+                  shared={false} 
+                />
+                <Legend verticalAlign="top" height={36} />
+                <Bar dataKey="In" fill="#047857" name="Cash In" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Out" fill="#b91c1c" name="Cash Out" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -148,11 +162,17 @@ const Dashboard = ({ toggleMenu }) => {
           <div className="chart-box small" style={{ height: '220px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={getExpenseData()} outerRadius={80} dataKey="value" labelLine={false}>
+                <Pie
+                  data={getExpenseData()}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
                   {getExpenseData().map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={(v) => fmtKRW(v)} />
-                <Legend verticalAlign="bottom" height={36}/>
+                <Tooltip contentStyle={{ backgroundColor: "#111827", border: "none", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }} itemStyle={{ color: "#fff", fontSize: "13px" }} labelStyle={{ color: "#fff", fontWeight: "bold", marginBottom: "4px" }} formatter={(v) => fmtKRW(v)} />
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: '16px' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -168,10 +188,16 @@ const Dashboard = ({ toggleMenu }) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" fontSize={10} />
                 <YAxis fontSize={11} tickFormatter={v => '₩' + (v / 1e6).toFixed(1) + 'M'} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="Revenue" fill="#1e40af" />
-                <Bar dataKey="Profit" fill="#047857" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#111827', border: 'none', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
+                  itemStyle={{ color: '#fff', fontSize: '13px' }}
+                  labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
+                  cursor={{ fill: 'transparent' }} 
+                  shared={false} 
+                />
+                <Legend verticalAlign="top" height={36} />
+                <Bar dataKey="Revenue" fill="#1e40af" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Profit" fill="#047857" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -181,11 +207,17 @@ const Dashboard = ({ toggleMenu }) => {
           <div className="chart-box small" style={{ height: '220px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={getInvestorShare()} outerRadius={80} dataKey="value">
+                <Pie
+                  data={getInvestorShare()}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
                   {getInvestorShare().map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
-                <Tooltip formatter={(v) => fmtKRW(v)} />
-                <Legend verticalAlign="bottom" height={36}/>
+                <Tooltip contentStyle={{ backgroundColor: "#111827", border: "none", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }} itemStyle={{ color: "#fff", fontSize: "13px" }} labelStyle={{ color: "#fff", fontWeight: "bold", marginBottom: "4px" }} formatter={(v) => fmtKRW(v)} />
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: '16px' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -197,18 +229,33 @@ const Dashboard = ({ toggleMenu }) => {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Date</th><th>Type</th><th>Detail</th><th className="num">Amount (KRW)</th></tr>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Detail</th>
+                <th className="num">Amount (KRW)</th>
+              </tr>
             </thead>
             <tbody>
-              {data.activity.slice(-10).reverse().map((act, i) => (
-                <tr key={i}>
-                  <td>{new Date(act.at).toISOString().slice(0, 10)}</td>
-                  <td><span className={`badge badge-${act.action==='create'?'green':act.action==='update'?'amber':'red'}`}>{act.entity} {act.action}</span></td>
-                  <td>{act.detail}</td>
-                  <td className="num"><strong>{act.action==='create'?'+':'-'}</strong></td>
-                </tr>
-              ))}
-              {data.activity.length === 0 && <tr><td colSpan="4" className="empty">No activity yet</td></tr>}
+              {data.activity.slice(-5).reverse().map((act, i) => {
+                const isPositive = act.action === 'create' && (act.entity === 'sales' || act.entity === 'cashflow' || act.entity === 'ownerInvestments');
+                const isNegative = act.action === 'create' && (act.entity === 'expenses' || act.entity === 'payouts');
+                return (
+                  <tr key={i}>
+                    <td>{new Date(act.at).toISOString().slice(0, 10)}</td>
+                    <td>
+                      <span className={`badge badge-${isPositive ? 'green' : isNegative ? 'amber' : 'brand'}`}>
+                        {act.entity === 'sales' ? 'Sale' : act.entity === 'expenses' ? 'Expense' : act.entity === 'cashflow' ? 'Cashflow' : 'Info'}
+                      </span>
+                    </td>
+                    <td>{act.detail}</td>
+                    <td className={`num ${isPositive ? 'green' : isNegative ? 'red' : ''}`}>
+                      {isPositive ? '+' : isNegative ? '-' : ''} {act.amount ? fmtKRW(act.amount) : '--'}
+                    </td>
+                  </tr>
+                );
+              })}
+              {(data.activity || []).length === 0 && <tr><td colSpan="4" className="empty">No activity yet</td></tr>}
             </tbody>
           </table>
         </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 
-const Expenses = ({ toggleMenu }) => {
+const Expenses = ({ toggleMenu, onLogout }) => {
   const { data, addExpense, updateExpense, deleteExpense } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -18,26 +18,35 @@ const Expenses = ({ toggleMenu }) => {
           <button className="menu-toggle" onClick={toggleMenu}>☰</button>
           <div>
             <h1 className="page-title">Expenses</h1>
-            <div className="page-sub">Shipping, customs and office costs</div>
+            <div className="page-sub">Shipping, packing, commission, personal costs</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Add Expense</button>
+          <button className="btn btn-danger" onClick={onLogout}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
         </div>
       </div>
 
       <div className="chart-grid">
         <div className="card">
-          <div className="card-header"><h3 className="card-title">All Expenses ({fmtKRW(a.totalExp)})</h3></div>
+          <div className="card-header"><h3 className="card-title">All Expenses — Total {fmtKRW(a.totalExp)}</h3></div>
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Category</th>
-                  <th>Note</th>
-                  <th className="num">Amount</th>
-                  <th>Actions</th>
+                  <th>DATE</th>
+                  <th>CATEGORY</th>
+                  <th>NOTE</th>
+                  <th className="num">AMOUNT (KRW)</th>
+                  <th>ADDED BY</th>
+                  <th>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -47,6 +56,7 @@ const Expenses = ({ toggleMenu }) => {
                     <td><span className="badge badge-amber">{e.category}</span></td>
                     <td>{e.note}</td>
                     <td className="num neg"><strong>{fmtKRW(e.amount)}</strong></td>
+                    <td><span className="badge badge-brand">{e.createdBy || '—'}</span></td>
                     <td>
                       <div className="inline-actions">
                         <button className="btn btn-sm" onClick={() => { setEditingItem(e); setShowModal(true); }}>Edit</button>

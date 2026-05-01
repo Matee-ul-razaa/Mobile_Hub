@@ -3,7 +3,7 @@ import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 import * as XLSX from 'xlsx';
 
-const Sales = ({ toggleMenu }) => {
+const Sales = ({ toggleMenu, onLogout }) => {
   const { data, addSale, updateSale, deleteSale } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
@@ -35,30 +35,40 @@ const Sales = ({ toggleMenu }) => {
           <button className="menu-toggle" onClick={toggleMenu}>☰</button>
           <div>
             <h1 className="page-title">Sales</h1>
-            <div className="page-sub">Track buyer orders and shipments</div>
+            <div className="page-sub">Orders sent to Pakistan buyers</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button className="btn">⬇ Template</button>
           <button className="btn" onClick={handleExport}>⬇ Export Excel</button>
+          <button className="btn">⬆ Import Excel</button>
           <button className="btn btn-primary" onClick={() => { setEditingSale(null); setShowModal(true); }}>+ New Sale</button>
+          <button className="btn btn-danger" onClick={onLogout}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign out
+          </button>
         </div>
       </div>
 
       <div className="kpi-grid">
         <div className="kpi">
-          <div className="kpi-label">Total Revenue</div>
+          <div className="kpi-label">TOTAL REVENUE</div>
           <div className="kpi-value">{fmtKRW(a.salesRev)}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Cost of Goods</div>
+          <div className="kpi-label">COST OF GOODS</div>
           <div className="kpi-value">{fmtKRW(a.salesCOGS)}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Gross Profit</div>
+          <div className="kpi-label">GROSS PROFIT</div>
           <div className="kpi-value pos">{fmtKRW(a.grossProfit)}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Pending Receivable</div>
+          <div className="kpi-label">PENDING RECEIVABLE</div>
           <div className="kpi-value neg">{fmtKRW(a.pendingReceivable)}</div>
         </div>
       </div>
@@ -68,15 +78,18 @@ const Sales = ({ toggleMenu }) => {
           <table>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Buyer</th>
-                <th>Model</th>
-                <th className="num">Qty</th>
-                <th className="num">Total</th>
-                <th className="num">Received</th>
-                <th className="num">Pending</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>DATE</th>
+                <th>BUYER</th>
+                <th>MODEL</th>
+                <th className="num">QTY</th>
+                <th className="num">PRICE/UNIT</th>
+                <th className="num">TOTAL</th>
+                <th className="num">RECEIVED</th>
+                <th className="num">PENDING</th>
+                <th>STATUS</th>
+                <th>SHIPMENT</th>
+                <th>ADDED BY</th>
+                <th>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +103,7 @@ const Sales = ({ toggleMenu }) => {
                     <td><strong>{s.buyer}</strong></td>
                     <td>{s.model}</td>
                     <td className="num">{s.qty}</td>
+                    <td className="num">{fmtKRW(s.pricePerUnit)}</td>
                     <td className="num"><strong>{fmtKRW(total)}</strong></td>
                     <td className="num">{fmtKRW(s.received || 0)}</td>
                     <td className="num neg">{fmtKRW(pending)}</td>
@@ -98,6 +112,8 @@ const Sales = ({ toggleMenu }) => {
                         {status}
                       </span>
                     </td>
+                    <td><span className="muted">—</span></td>
+                    <td><span className="badge badge-brand">{s.createdBy || '—'}</span></td>
                     <td>
                       <div className="inline-actions">
                         <button className="btn btn-sm" onClick={() => { setEditingSale(s); setShowModal(true); }}>Edit</button>
