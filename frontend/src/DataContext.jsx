@@ -7,28 +7,12 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 const defaultData = {
-  inventory: [
-    { _id: uid(), model: 'iPhone 15 Pro 256GB', brand: 'Apple', sku: 'IP15P-256', qty: 12, costPerUnit: 1650000, soldQty: 8, notes: 'Space Black' },
-    { _id: uid(), model: 'Samsung S24 Ultra 512GB', brand: 'Samsung', sku: 'S24U-512', qty: 6, costPerUnit: 1420000, soldQty: 4, notes: '' },
-  ],
-  sales: [
-    { _id: uid(), date: todayISO(), buyer: 'Ali Traders, Karachi', model: 'iPhone 15 Pro 256GB', qty: 8, pricePerUnit: 1820000, received: 0, notes: 'Pending hawala' },
-  ],
-  expenses: [
-    { _id: uid(), date: todayISO(), category: 'Shipping', amount: 350000, note: 'DHL box to Karachi' },
-    { _id: uid(), date: todayISO(), category: 'Packaging', amount: 45000, note: '' },
-  ],
-  cashflow: [
-    { _id: uid(), date: todayISO(), type: 'in', amount: 2500000, source: 'Investor top-up', note: 'Initial capital' },
-  ],
+  inventory: [],
+  sales: [],
+  expenses: [],
+  cashflow: [],
   hawala: [],
-  investors: [
-    { _id: uid(), name: 'Investor 1', contact: '', capitalPKR: 2000000, capital: 10000000, monthlyPayoutPKR: 60000, monthlyPayout: 300000, startDate: '2026-04-30', notes: '' },
-    { _id: uid(), name: 'Investor 2', contact: '', capitalPKR: 1600000, capital: 8000000, monthlyPayoutPKR: 48000, monthlyPayout: 240000, startDate: '2026-04-30', notes: '' },
-    { _id: uid(), name: 'Investor 3', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: '2026-04-30', notes: '' },
-    { _id: uid(), name: 'Investor 4', contact: '', capitalPKR: 1000000, capital: 5000000, monthlyPayoutPKR: 30000, monthlyPayout: 150000, startDate: '2026-04-30', notes: '' },
-    { _id: uid(), name: 'Investor 5', contact: '', capitalPKR: 800000, capital: 4000000, monthlyPayoutPKR: 24000, monthlyPayout: 120000, startDate: '2026-04-30', notes: '' },
-  ],
+  investors: [],
   payouts: [],
   ownerInvestments: [],
   activity: [],
