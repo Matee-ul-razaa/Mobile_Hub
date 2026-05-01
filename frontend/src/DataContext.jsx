@@ -188,32 +188,75 @@ export const DataProvider = ({ children }) => {
   const updateCashflow = (id, obj) => updateItem('cashflow', id, obj);
   const deleteCashflow = (id) => deleteItem('cashflow', id);
 
-  const updateSettings = (obj) => {
-    setData(prev => ({ ...prev, settings: { ...prev.settings, ...obj } }));
-    logActivity('update', 'settings', 'Business settings updated');
+  // SYNC WITH BACKEND
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [inv, sls, exp, cf, hw, invs, pay, oi, ship, act, set] = await Promise.all([
+          fetch('/api/inventory').then(r => r.json()),
+          fetch('/api/sales').then(r => r.json()),
+          fetch('/api/expenses').then(r => r.json()),
+          fetch('/api/cashflow').then(r => r.json()),
+          fetch('/api/hawala').then(r => r.json()),
+          fetch('/api/investors').then(r => r.json()),
+          fetch('/api/payouts').then(r => r.json()),
+          fetch('/api/owner-investment').then(r => r.json()),
+          fetch('/api/shipments').then(r => r.json()),
+          fetch('/api/activity').then(r => r.json()),
+          fetch('/api/settings').then(r => r.json())
+        ]);
+
+        setData({
+          inventory: inv,
+          sales: sls,
+          expenses: exp,
+          cashflow: cf,
+          hawala: hw,
+          investors: invs,
+          payouts: pay,
+          ownerInvestments: oi,
+          shipments: ship,
+          activity: act,
+          settings: set
+        });
+      } catch (err) {
+        console.error('Initial fetch error:', err);
+      }
+    };
+    fetchData();
+    // Refresh every 30 seconds to keep devices in sync
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const updateSettings = async (obj) => {
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj)
+      });
+      const updated = await response.json();
+      setData(prev => ({ ...prev, settings: updated }));
+      logActivity('update', 'settings', 'Business settings updated');
+    } catch (err) {
+      console.error('Update settings error:', err);
+      showToast('Failed to save settings to server', 'danger');
+    }
   };
 
-  const clearActivity = () => {
-    showConfirm('Clear all activity logs? This cannot be undone.', () => {
-      setData(prev => ({ ...prev, activity: [] }));
-      showToast('Activity logs cleared');
-    });
-  };
-
-  const wipeAllData = () => {
-    setData(prev => ({
-      ...prev,
-      inventory: [],
-      sales: [],
-      expenses: [],
-      cashflow: [],
-      activity: [],
-      payouts: [],
-      ownerInvestments: [],
-      shipments: [],
-      hawala: []
-    }));
-    showToast('All business data has been wiped.', 'danger');
+  const wipeAllData = async () => {
+    try {
+      await fetch('/api/reset-all', { method: 'POST' });
+      setData(prev => ({
+        ...prev,
+        inventory: [], sales: [], expenses: [], cashflow: [],
+        activity: [], payouts: [], ownerInvestments: [], shipments: [], hawala: []
+      }));
+      showToast('All business data has been wiped from server.', 'danger');
+    } catch (err) {
+      showToast('Reset failed', 'danger');
+    }
   };
 
   const value = {

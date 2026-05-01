@@ -18,12 +18,12 @@ const Settings = ({ toggleMenu, onLogout }) => {
       return;
     }
     
-    // In a real app we'd verify current password against DB
-    // For this business tool, we'll just update the settings
-    const updatedUsers = { ...data.settings.users };
-    updatedUsers[activeAdmin] = passwords.new;
+    // Send to backend via updateSettings
+    const usersUpdate = {
+      [activeAdmin]: { password: passwords.new }
+    };
     
-    updateSettings({ users: updatedUsers });
+    updateSettings({ users: usersUpdate });
     setPasswords({ current: '', new: '', confirm: '' });
     showToast('Password updated successfully!');
   };

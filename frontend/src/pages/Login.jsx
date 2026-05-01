@@ -7,7 +7,7 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     if (e) e.preventDefault();
     if (!selectedUser) {
       setError('⚠ Please tap Nadeem or Bilawal first to select your account.');
@@ -18,15 +18,27 @@ const Login = ({ onLogin }) => {
       return;
     }
 
-    // Check against saved password or default 'admin'
-    const savedPassword = data.settings?.users?.[selectedUser] || 'admin';
+    try {
+      setError('');
+      // Call the real backend login API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: selectedUser, password })
+      });
 
-    if (password === savedPassword || password === '123456') {
-      localStorage.setItem('mobile_hub_user', selectedUser);
-      logActivity('login', 'auth', `${selectedUser === 'nadeem' ? 'Nadeem' : 'Bilawal'} signed in`);
-      onLogin(selectedUser);
-    } else {
-      setError(`✗ Incorrect password for ${selectedUser==='nadeem'?'Nadeem':'Bilawal'}.`);
+      const result = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('mobile_hub_user', selectedUser);
+        logActivity('login', 'auth', `${selectedUser === 'nadeem' ? 'Nadeem' : 'Bilawal'} signed in`);
+        onLogin(selectedUser);
+      } else {
+        setError(`✗ ${result.error || 'Incorrect password'}`);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('⚠ Connection error. Please check your internet or database.');
     }
   };
 

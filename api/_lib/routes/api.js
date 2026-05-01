@@ -155,12 +155,35 @@ router.get('/settings', async (req, res) => {
 router.put('/settings', async (req, res) => {
   try {
     let setting = await Setting.findOne();
-    if (setting) {
-      Object.assign(setting, req.body);
-      await setting.save();
-      res.json(setting);
-    } else { res.json(await Setting.create(req.body)); }
-  } catch (err) { res.status(400).json({ error: err.message }); }
+    if (!setting) {
+      setting = new Setting();
+    }
+
+    // Special handling for users map to hash passwords if they are updated
+    if (req.body.users) {
+      for (const [key, value] of Object.entries(req.body.users)) {
+        // If the frontend sends a plain 'password' field, hash it and store as 'pwdHash'
+        if (value.password) {
+          value.pwdHash = hashPwd(value.password);
+          delete value.password;
+        }
+        
+        // Ensure the user entry exists in the map
+        if (!setting.users) setting.users = new Map();
+        
+        const existing = setting.users.get(key) || {};
+        setting.users.set(key, { ...existing, ...value });
+      }
+      delete req.body.users; // Handled separately
+    }
+
+    Object.assign(setting, req.body);
+    await setting.save();
+    res.json(setting);
+  } catch (err) { 
+    console.error('SETTINGS UPDATE ERROR:', err);
+    res.status(400).json({ error: err.message }); 
+  }
 });
 
 router.post('/reset-all', async (req, res) => {
