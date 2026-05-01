@@ -313,7 +313,7 @@ button {
 /* Dashboard specifics */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: 16px; /* Increased gap slightly for better visual breathing room when expanded */
   margin-bottom: 16px;
 }
@@ -369,14 +369,14 @@ button {
 
 .chart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
   gap: 16px;
   margin-bottom: 16px;
 }
 
 .inv-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 16px;
   margin-top: 16px;
 }
@@ -496,6 +496,43 @@ tr:hover td {
 
   .page-body {
     padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .modal-actions {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+  
+  .modal-actions .btn {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .modal .card-header {
+    padding: 16px 16px 0 16px;
+  }
+  
+  .form-row, .form-row-2 {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 }
 
