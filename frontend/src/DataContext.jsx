@@ -67,35 +67,74 @@ export const DataProvider = ({ children }) => {
   };
 
 
-  const addItem = (key, obj) => {
-    const newObj = { ...obj, _id: uid() };
-    setData(prev => ({
-      ...prev,
-      [key]: [...prev[key], newObj]
-    }));
-    logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || (obj.qty * (obj.pricePerUnit || obj.costPerUnit)) || null);
-    showToast('Saved successfully');
-    return newObj;
+  const getPath = (key) => {
+    const map = {
+      inventory: 'inventory',
+      sales: 'sales',
+      expenses: 'expenses',
+      cashflow: 'cashflow',
+      hawala: 'hawala',
+      investors: 'investors',
+      payouts: 'payouts',
+      ownerInvestments: 'owner-investment',
+      shipments: 'shipments',
+      activity: 'activity'
+    };
+    return map[key] || key;
   };
 
-  const updateItem = (key, id, obj) => {
-    setData(prev => ({
-      ...prev,
-      [key]: prev[key].map(item => item._id === id ? { ...item, ...obj } : item)
-    }));
-    logActivity('update', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
-    showToast('Updated successfully');
-  };
-
-  const deleteItem = (key, id) => {
-    showConfirm('Are you sure you want to delete this record?', () => {
-      const itemToDelete = data[key].find(i => i._id === id);
+  const addItem = async (key, obj) => {
+    try {
+      const response = await fetch(`/api/${getPath(key)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj)
+      });
+      const newObj = await response.json();
       setData(prev => ({
         ...prev,
-        [key]: prev[key].filter(item => item._id !== id)
+        [key]: [...prev[key], newObj]
       }));
-      logActivity('delete', key, itemToDelete?.model || itemToDelete?.buyer || itemToDelete?.category || itemToDelete?.name || 'item');
-      showToast('Deleted successfully', 'danger');
+      logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || (obj.qty * (obj.pricePerUnit || obj.costPerUnit)) || null);
+      showToast('Saved to cloud');
+      return newObj;
+    } catch (err) {
+      showToast('Failed to save to cloud', 'danger');
+    }
+  };
+
+  const updateItem = async (key, id, obj) => {
+    try {
+      const response = await fetch(`/api/${getPath(key)}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(obj)
+      });
+      const updated = await response.json();
+      setData(prev => ({
+        ...prev,
+        [key]: prev[key].map(item => item._id === id ? updated : item)
+      }));
+      logActivity('update', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+      showToast('Updated on cloud');
+    } catch (err) {
+      showToast('Update failed', 'danger');
+    }
+  };
+
+  const deleteItem = async (key, id) => {
+    showConfirm(`Delete this ${key.slice(0, -1)}?`, async () => {
+      try {
+        await fetch(`/api/${getPath(key)}/${id}`, { method: 'DELETE' });
+        setData(prev => ({
+          ...prev,
+          [key]: prev[key].filter(item => item._id !== id)
+        }));
+        logActivity('delete', key, id);
+        showToast('Deleted from cloud');
+      } catch (err) {
+        showToast('Delete failed', 'danger');
+      }
     });
   };
 
