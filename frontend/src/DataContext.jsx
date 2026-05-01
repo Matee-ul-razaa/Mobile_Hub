@@ -218,10 +218,9 @@ export const DataProvider = ({ children }) => {
         const fetchSafe = async (url) => {
           try {
             const r = await fetch(url);
-            if (!r.ok) return []; // Fallback to empty if 500
-            const json = await r.json();
-            return Array.isArray(json) ? json : (json.users ? json : []);
-          } catch (e) { return []; }
+            if (!r.ok) return null; // Error
+            return await r.json();
+          } catch (e) { return null; }
         };
 
         const [inv, sls, exp, cf, hw, invs, pay, oi, ship, act, set] = await Promise.all([
@@ -240,17 +239,17 @@ export const DataProvider = ({ children }) => {
 
         setData(prev => ({
           ...prev,
-          inventory: inv.length ? inv : prev.inventory,
-          sales: sls.length ? sls : prev.sales,
-          expenses: exp.length ? exp : prev.expenses,
-          cashflow: cf.length ? cf : prev.cashflow,
-          hawala: hw.length ? hw : prev.hawala,
-          investors: invs.length ? invs : prev.investors,
-          payouts: pay.length ? pay : prev.payouts,
-          ownerInvestments: oi.length ? oi : prev.ownerInvestments,
-          shipments: ship.length ? ship : prev.shipments,
-          activity: act.length ? act : prev.activity,
-          settings: (set && set.businessName) ? set : prev.settings
+          inventory: inv !== null ? inv : prev.inventory,
+          sales: sls !== null ? sls : prev.sales,
+          expenses: exp !== null ? exp : prev.expenses,
+          cashflow: cf !== null ? cf : prev.cashflow,
+          hawala: hw !== null ? hw : prev.hawala,
+          investors: invs !== null ? invs : prev.investors,
+          payouts: pay !== null ? pay : prev.payouts,
+          ownerInvestments: oi !== null ? oi : prev.ownerInvestments,
+          shipments: ship !== null ? ship : prev.shipments,
+          activity: act !== null ? act : prev.activity,
+          settings: (set !== null && set.businessName) ? set : prev.settings
         }));
       } catch (err) {
         console.error('Initial fetch error:', err);
