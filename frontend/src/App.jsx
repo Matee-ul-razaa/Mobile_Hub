@@ -81,7 +81,7 @@ function App() {
       {isMenuOpen && <div className="backdrop show" onClick={() => setIsMenuOpen(false)}></div>}
       
       <aside className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <div className="brand">
+        <div className="brand" onClick={() => { navigate('/'); setIsMenuOpen(false); }} style={{ cursor: 'pointer' }}>
           <div className="brand-logo">MH</div>
           <div>
             <div className="brand-title">Mobile Hub</div>
