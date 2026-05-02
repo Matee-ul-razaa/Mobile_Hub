@@ -167,8 +167,8 @@ export const DataProvider = ({ children }) => {
     try {
       const newObj = await request(`/api/${getPath(key)}`, { method: 'POST', body: JSON.stringify(obj) });
       setData(prev => ({ ...prev, [key]: [...(prev[key] || []), newObj] }));
-      await logActivity('create', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || obj.purchasePrice || obj.amountKRW || (obj.qty * (obj.pricePerUnit || obj.costPerUnit || 0)) || null);
-      if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
+      logActivity('create', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || obj.purchasePrice || obj.amountKRW || (obj.qty * (obj.pricePerUnit || obj.costPerUnit || 0)) || null);
+      if (['sales', 'hawala', 'inventory'].includes(key)) fetchData();
       showToast('Entry saved successfully');
       return newObj;
     } catch (err) {
@@ -181,8 +181,8 @@ export const DataProvider = ({ children }) => {
     try {
       const updated = await request(`/api/${getPath(key)}/${id}`, { method: 'PUT', body: JSON.stringify(obj) });
       setData(prev => ({ ...prev, [key]: (prev[key] || []).map(item => item._id === id ? updated : item) }));
-      await logActivity('update', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item');
-      if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
+      logActivity('update', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item');
+      if (['sales', 'hawala', 'inventory'].includes(key)) fetchData();
       showToast('Entry updated successfully');
       return updated;
     } catch (err) {
@@ -196,8 +196,8 @@ export const DataProvider = ({ children }) => {
       try {
         await request(`/api/${getPath(key)}/${id}`, { method: 'DELETE' });
         setData(prev => ({ ...prev, [key]: (prev[key] || []).filter(item => item._id !== id) }));
-        await logActivity('delete', key, id);
-        if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
+        logActivity('delete', key, id);
+        if (['sales', 'hawala', 'inventory'].includes(key)) fetchData();
         showToast('Entry deleted successfully');
       } catch (err) {
         showToast(err.message || 'Delete failed', 'danger');
