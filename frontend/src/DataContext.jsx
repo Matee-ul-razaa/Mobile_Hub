@@ -169,7 +169,7 @@ export const DataProvider = ({ children }) => {
       setData(prev => ({ ...prev, [key]: [...(prev[key] || []), newObj] }));
       await logActivity('create', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || obj.purchasePrice || obj.amountKRW || (obj.qty * (obj.pricePerUnit || obj.costPerUnit || 0)) || null);
       if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
-      showToast('Saved to cloud');
+      showToast('Entry saved successfully');
       return newObj;
     } catch (err) {
       showToast(err.message || 'Failed to save to cloud', 'danger');
@@ -183,7 +183,7 @@ export const DataProvider = ({ children }) => {
       setData(prev => ({ ...prev, [key]: (prev[key] || []).map(item => item._id === id ? updated : item) }));
       await logActivity('update', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item');
       if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
-      showToast('Updated on cloud');
+      showToast('Entry updated successfully');
       return updated;
     } catch (err) {
       showToast(err.message || 'Update failed', 'danger');
@@ -198,7 +198,7 @@ export const DataProvider = ({ children }) => {
         setData(prev => ({ ...prev, [key]: (prev[key] || []).filter(item => item._id !== id) }));
         await logActivity('delete', key, id);
         if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
-        showToast('Deleted from cloud');
+        showToast('Entry deleted successfully');
       } catch (err) {
         showToast(err.message || 'Delete failed', 'danger');
       }
@@ -312,10 +312,10 @@ export const DataProvider = ({ children }) => {
       {children}
       {toast && (
         <div className="custom-toast" style={{
-          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          background: toast.type === 'danger' ? 'var(--red)' : 'var(--teal)', color: '#fff',
-          padding: '20px 40px', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-          zIndex: 9999, fontWeight: 'bold', fontSize: '18px', textAlign: 'center', animation: 'fadeIn 0.2s ease-out'
+          position: 'fixed', bottom: '24px', right: '24px',
+          background: toast.type === 'danger' ? 'var(--red)' : 'var(--green)', color: '#fff',
+          padding: '16px 24px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+          zIndex: 9999, fontWeight: '600', fontSize: '15px', animation: 'fadeIn 0.2s ease-out'
         }}>
           {toast.msg}
         </div>
