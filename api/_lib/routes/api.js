@@ -47,8 +47,10 @@ function signToken(payload) {
 }
 
 function verifyToken(token) {
-  if (!token || !token.includes('.')) return null;
-  const [body, sig] = token.split('.');
+  const parts = token.split('.');  
+  if (parts.length < 2) return null;
+  const body = parts[0];
+  const sig = parts.slice(1).join('.');
   const expected = crypto.createHmac('sha256', TOKEN_SECRET).update(body).digest('base64url');
   if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
   const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
@@ -93,14 +95,10 @@ async function ensureSettings() {
 const numberValue = (v) => Number.isFinite(Number(v)) ? Number(v) : 0;
 const nonNegative = (v) => numberValue(v) >= 0;
 const positive = (v) => numberValue(v) > 0;
-const availableStock = (inv) => Math.max(0, numberValue(inv.qty) - numberValue(inv.soldQty));
 
 function validateInventory(body) {
-  if (!String(body.model || '').trim()) return 'Model is required';
-  if (!nonNegative(body.qty)) return 'Quantity cannot be negative';
-  if (!nonNegative(body.soldQty || 0)) return 'Sold quantity cannot be negative';
-  if (!nonNegative(body.costPerUnit || 0)) return 'Cost per unit cannot be negative';
-  if (numberValue(body.soldQty || 0) > numberValue(body.qty || 0)) return 'Sold quantity cannot be greater than total quantity';
+  if (!String(body.modelName || '').trim()) return 'Model Name is required';
+  if (!nonNegative(body.purchasePrice || 0)) return 'Purchase Price cannot be negative';
   return null;
 }
 
@@ -160,7 +158,7 @@ router.get('/health', (_req, res) => res.json({ ok: true }));
 // All routes below this line require login.
 router.use(authRequired);
 
-// Inventory
+// Inventory — per-unit (each phone is one document)
 router.get('/inventory', async (req, res) => {
   try { res.json(await crudList(Inventory)); } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -168,10 +166,23 @@ router.post('/inventory', async (req, res) => {
   try {
     const error = validateInventory(req.body);
     if (error) return res.status(400).json({ error });
-    const duplicate = await Inventory.findOne({ model: String(req.body.model).trim() });
-    if (duplicate) return res.status(409).json({ error: 'Inventory model already exists. Edit the existing item instead.' });
-    const item = await Inventory.create({ ...req.body, model: String(req.body.model).trim() });
-    await writeActivity(req, 'create', 'inventory', item.model, item.qty * item.costPerUnit);
+
+    // Check IMEI1 uniqueness if provided
+    const imei1 = String(req.body.imei1 || '').trim();
+    if (imei1) {
+      const dup = await Inventory.findOne({ imei1 });
+      if (dup) return res.status(409).json({ error: `IMEI ${imei1} already exists in inventory.` });
+    }
+
+    const item = await Inventory.create({
+      ...req.body,
+      modelName: String(req.body.modelName).trim(),
+      imei1,
+      imei2: String(req.body.imei2 || '').trim(),
+      status: 'In Stock',
+      createdBy: req.user?.user || '',
+    });
+    await writeActivity(req, 'create', 'inventory', `${item.modelName} ${item.storage} ${item.color}`, item.purchasePrice);
     res.status(201).json(item);
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -181,10 +192,21 @@ router.put('/inventory/:id', async (req, res) => {
     if (error) return res.status(400).json({ error });
     const existing = await Inventory.findById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Inventory item not found' });
-    const duplicate = await Inventory.findOne({ model: String(req.body.model).trim(), _id: { $ne: req.params.id } });
-    if (duplicate) return res.status(409).json({ error: 'Another inventory item already has this model name.' });
-    const updated = await Inventory.findByIdAndUpdate(req.params.id, { ...req.body, model: String(req.body.model).trim() }, { new: true, runValidators: true });
-    await writeActivity(req, 'update', 'inventory', updated.model);
+
+    // Check IMEI1 uniqueness if changed
+    const imei1 = String(req.body.imei1 || '').trim();
+    if (imei1 && imei1 !== existing.imei1) {
+      const dup = await Inventory.findOne({ imei1, _id: { $ne: req.params.id } });
+      if (dup) return res.status(409).json({ error: `IMEI ${imei1} already exists in inventory.` });
+    }
+
+    const updated = await Inventory.findByIdAndUpdate(req.params.id, {
+      ...req.body,
+      modelName: String(req.body.modelName).trim(),
+      imei1,
+      imei2: String(req.body.imei2 || '').trim(),
+    }, { new: true, runValidators: true });
+    await writeActivity(req, 'update', 'inventory', `${updated.modelName} ${updated.storage}`);
     res.json(updated);
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -192,34 +214,41 @@ router.delete('/inventory/:id', async (req, res) => {
   try {
     const item = await Inventory.findById(req.params.id);
     if (!item) return res.status(404).json({ error: 'Inventory item not found' });
-    const saleCount = await Sale.countDocuments({ model: item.model });
-    if (saleCount > 0) return res.status(409).json({ error: 'Cannot delete inventory item with sales history. Keep it for reports.' });
+    if (item.status === 'Sold') return res.status(409).json({ error: 'Cannot delete a sold item. It is linked to a sale record.' });
     await Inventory.findByIdAndDelete(req.params.id);
-    await writeActivity(req, 'delete', 'inventory', item.model);
+    await writeActivity(req, 'delete', 'inventory', `${item.modelName} ${item.imei1}`);
     res.json({ message: 'Deleted' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Sales with stock synchronization
+// Sales — marks inventory items as Sold
 router.get('/sales', async (req, res) => {
   try { res.json(await Sale.find().sort({ date: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 router.post('/sales', async (req, res) => {
   try {
     if (!String(req.body.buyer || '').trim()) return res.status(400).json({ error: 'Buyer is required' });
-    if (!String(req.body.model || '').trim()) return res.status(400).json({ error: 'Model is required' });
+    if (!String(req.body.modelName || '').trim()) return res.status(400).json({ error: 'Model is required' });
     if (!positive(req.body.qty)) return res.status(400).json({ error: 'Quantity must be greater than zero' });
     if (!positive(req.body.pricePerUnit)) return res.status(400).json({ error: 'Price per unit must be greater than zero' });
     if (!nonNegative(req.body.received || 0)) return res.status(400).json({ error: 'Received amount cannot be negative' });
+    const saleTotal = numberValue(req.body.qty) * numberValue(req.body.pricePerUnit);
+    if (numberValue(req.body.received || 0) > saleTotal) return res.status(400).json({ error: 'Received amount cannot exceed total sale value' });
 
-    const inv = await Inventory.findOne({ model: req.body.model });
-    if (!inv) return res.status(400).json({ error: 'Inventory item not found for this model' });
-    if (numberValue(req.body.qty) > availableStock(inv)) return res.status(400).json({ error: `Only ${availableStock(inv)} units available in stock` });
+    // If a specific inventory item was selected, mark it as Sold
+    if (req.body.inventoryId) {
+      const inv = await Inventory.findById(req.body.inventoryId);
+      if (inv && inv.status === 'In Stock') {
+        inv.status = 'Sold';
+        await inv.save();
+      }
+    }
 
-    const sale = await Sale.create(req.body);
-    inv.soldQty = numberValue(inv.soldQty) + numberValue(sale.qty);
-    await inv.save();
-    await writeActivity(req, 'create', 'sales', `${sale.buyer} - ${sale.model}`, sale.qty * sale.pricePerUnit);
+    const sale = await Sale.create({
+      ...req.body,
+      createdBy: req.user?.user || '',
+    });
+    await writeActivity(req, 'create', 'sales', `${sale.buyer} - ${sale.modelName}`, sale.qty * sale.pricePerUnit);
     res.status(201).json(sale);
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -228,30 +257,22 @@ router.put('/sales/:id', async (req, res) => {
     if (!positive(req.body.qty)) return res.status(400).json({ error: 'Quantity must be greater than zero' });
     if (!positive(req.body.pricePerUnit)) return res.status(400).json({ error: 'Price per unit must be greater than zero' });
     if (!nonNegative(req.body.received || 0)) return res.status(400).json({ error: 'Received amount cannot be negative' });
+    const saleTotal = numberValue(req.body.qty) * numberValue(req.body.pricePerUnit);
+    if (numberValue(req.body.received || 0) > saleTotal) return res.status(400).json({ error: 'Received amount cannot exceed total sale value' });
 
     const oldSale = await Sale.findById(req.params.id);
     if (!oldSale) return res.status(404).json({ error: 'Sale not found' });
 
-    const oldInv = await Inventory.findOne({ model: oldSale.model });
-    if (oldInv) {
-      oldInv.soldQty = Math.max(0, numberValue(oldInv.soldQty) - numberValue(oldSale.qty));
-      await oldInv.save();
+    // If inventory item changed, restore old and mark new
+    if (oldSale.inventoryId && String(oldSale.inventoryId) !== String(req.body.inventoryId || '')) {
+      await Inventory.findByIdAndUpdate(oldSale.inventoryId, { status: 'In Stock' });
     }
-
-    const newInv = await Inventory.findOne({ model: req.body.model });
-    if (!newInv) {
-      if (oldInv) { oldInv.soldQty = numberValue(oldInv.soldQty) + numberValue(oldSale.qty); await oldInv.save(); }
-      return res.status(400).json({ error: 'Inventory item not found for this model' });
-    }
-    if (numberValue(req.body.qty) > availableStock(newInv)) {
-      if (oldInv) { oldInv.soldQty = numberValue(oldInv.soldQty) + numberValue(oldSale.qty); await oldInv.save(); }
-      return res.status(400).json({ error: `Only ${availableStock(newInv)} units available in stock` });
+    if (req.body.inventoryId) {
+      await Inventory.findByIdAndUpdate(req.body.inventoryId, { status: 'Sold' });
     }
 
     const newSale = await Sale.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    newInv.soldQty = numberValue(newInv.soldQty) + numberValue(newSale.qty);
-    await newInv.save();
-    await writeActivity(req, 'update', 'sales', `${newSale.buyer} - ${newSale.model}`);
+    await writeActivity(req, 'update', 'sales', `${newSale.buyer} - ${newSale.modelName}`);
     res.json(newSale);
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -259,13 +280,19 @@ router.delete('/sales/:id', async (req, res) => {
   try {
     const sale = await Sale.findById(req.params.id);
     if (!sale) return res.status(404).json({ error: 'Sale not found' });
-    const inv = await Inventory.findOne({ model: sale.model });
-    if (inv) { inv.soldQty = Math.max(0, numberValue(inv.soldQty) - numberValue(sale.qty)); await inv.save(); }
+
+    // Restore inventory item to In Stock
+    if (sale.inventoryId) {
+      await Inventory.findByIdAndUpdate(sale.inventoryId, { status: 'In Stock' });
+    }
+
     await Sale.findByIdAndDelete(req.params.id);
-    await writeActivity(req, 'delete', 'sales', `${sale.buyer} - ${sale.model}`);
+    await writeActivity(req, 'delete', 'sales', `${sale.buyer} - ${sale.modelName}`);
     res.json({ message: 'Deleted' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+
 
 // Generic CRUD with light validation
 function crudRoutes(path, Model, options = {}) {
@@ -318,7 +345,6 @@ crudRoutes('/investors', Investor, {
 crudRoutes('/payouts', Payout, { validate: (b) => !b.investorId ? 'Investor is required' : !b.date ? 'Date is required' : validateAmount(b) });
 crudRoutes('/owner-investment', OwnerInvestment, { validate: (b) => !b.date ? 'Date is required' : validateAmount(b, 'amountKRW') });
 crudRoutes('/shipments', Shipment, { validate: (b) => !(b.date || b.sentDate) ? 'Shipment date is required' : null });
-crudRoutes('/activity', Activity);
 
 // Hawala / Fazi Cash with linked sale synchronization.
 async function applyHawalaToSale(hawala, sign = 1) {
@@ -388,7 +414,11 @@ router.put('/settings', async (req, res) => {
       delete req.body.users;
     }
 
-    Object.assign(setting, req.body);
+    // Only allow whitelisted fields to prevent mass-assignment
+    const allowed = ['businessName', 'owner', 'apiKey', 'aiModel', 'aiProvider'];
+    for (const field of allowed) {
+      if (req.body[field] !== undefined) setting[field] = req.body[field];
+    }
     await setting.save();
     await writeActivity(req, 'update', 'settings', 'Business settings updated');
     res.json(setting);

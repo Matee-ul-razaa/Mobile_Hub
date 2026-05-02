@@ -14,10 +14,12 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
   // --- CHART DATA PROCESSING ---
   const getMonthlyCashFlow = () => {
     const months = [];
-    const d = new Date();
+    const now = new Date();
     for (let i = 5; i >= 0; i--) {
-      const dd = new Date(d.getFullYear(), d.getMonth() - i, 1);
-      months.push(dd.toISOString().slice(0, 7));
+      const dd = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      // Use local year/month to avoid UTC timezone shift
+      const m = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}`;
+      months.push(m);
     }
     return months.map(m => {
       const inflow = (data.hawala || []).filter(h => ym(h.date) === m).reduce((s, x) => s + (x.amountKRW || 0), 0) +
@@ -39,9 +41,16 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
   const getSalesProfitData = () => {
     return (data.sales || []).slice(-8).map((s, i) => {
       const rev = s.qty * s.pricePerUnit;
-      const it = data.inventory.find(inv => inv.model === s.model);
-      const cost = s.qty * (it ? it.costPerUnit : 0);
-      return { name: `#${i + 1} ${s.buyer.slice(0, 8)}`, Revenue: rev, Profit: rev - cost };
+      // For per-unit inventory, look up by inventoryId or modelName
+      let cost = 0;
+      if (s.inventoryId) {
+        const it = (data.inventory || []).find(inv => inv._id === s.inventoryId);
+        cost = s.qty * (it ? (Number(it.purchasePrice) || 0) : 0);
+      } else {
+        const it = (data.inventory || []).find(inv => inv.modelName === (s.modelName || s.model));
+        cost = s.qty * (it ? (Number(it.purchasePrice) || 0) : 0);
+      }
+      return { name: `#${i + 1} ${(s.buyer || '').slice(0, 8)}`, Revenue: rev, Profit: rev - cost };
     });
   };
 

@@ -15,13 +15,25 @@ export const agg = (data) => {
   const ownerInvestments = data.ownerInvestments || [];
   const cashflow = data.cashflow || [];
 
-  const invValue = inventory.reduce((a, x) => a + Math.max(0, ((Number(x.qty) || 0) - (Number(x.soldQty) || 0))) * (Number(x.costPerUnit) || 0), 0);
-  const invUnits = inventory.reduce((a, x) => a + Math.max(0, ((Number(x.qty) || 0) - (Number(x.soldQty) || 0))), 0);
+  // Per-unit inventory: each item is one phone
+  const inStock = inventory.filter(x => x.status === 'In Stock');
+  const invValue = inStock.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
+  const invUnits = inStock.length;
   const salesRev = sales.reduce((a,x)=> a + x.qty * x.pricePerUnit, 0);
   
+  // COGS: find purchase price from inventory for each sale
   const salesCOGS = sales.reduce((a,x)=>{
-    const item = inventory.find(i=>i.model===x.model);
-    return a + x.qty * (item ? item.costPerUnit : 0);
+    // Try to find the linked inventory item
+    let cost = 0;
+    if (x.inventoryId) {
+      const item = inventory.find(i => i._id === x.inventoryId);
+      cost = item ? (Number(item.purchasePrice) || 0) : 0;
+    } else {
+      // Fallback: match by modelName + imei1
+      const item = inventory.find(i => i.modelName === (x.modelName || x.model) && (x.imei1 ? i.imei1 === x.imei1 : true));
+      cost = item ? (Number(item.purchasePrice) || 0) : 0;
+    }
+    return a + x.qty * cost;
   }, 0);
 
   const grossProfit = salesRev - salesCOGS;
@@ -41,6 +53,7 @@ export const agg = (data) => {
   const ownerCapitalPKR = ownerInvestments.reduce((a,x)=>a+(+x.amountPKR||0),0);
   
   const totalMonthly = investors.reduce((a,x)=>a+(+x.monthlyPayout||0),0);
+  const totalMonthlyPKR = investors.reduce((a,x)=>a+(+x.monthlyPayoutPKR||0),0);
   const totalPaid = payouts.reduce((a,x)=>a+(+x.amount||0),0);
   const totalPaidPKR = payouts.reduce((a,x)=>a+(+x.amountPKR||0),0);
   
@@ -56,8 +69,14 @@ export const agg = (data) => {
     const received = Math.min(s.received||0, total);
     const ratio = received / total; 
     realizedRevenue += received;
-    const item = inventory.find(i=>i.model===s.model);
-    const costPerUnit = item ? item.costPerUnit : 0;
+    let costPerUnit = 0;
+    if (s.inventoryId) {
+      const item = inventory.find(i => i._id === s.inventoryId);
+      costPerUnit = item ? (Number(item.purchasePrice) || 0) : 0;
+    } else {
+      const item = inventory.find(i => i.modelName === (s.modelName || s.model));
+      costPerUnit = item ? (Number(item.purchasePrice) || 0) : 0;
+    }
     realizedCOGS += s.qty * costPerUnit * ratio;
   });
 
@@ -69,7 +88,7 @@ export const agg = (data) => {
     invValue, invUnits, salesRev, salesCOGS, grossProfit, totalExp, netProfit,
     hawalaIn, hawalaPKR, hawalaDiscount, pendingReceivable,
     totalCapital, totalCapitalPKR, ownerCapital, ownerCapitalPKR,
-    totalMonthly, totalPaid, totalPaidPKR,
+    totalMonthly, totalMonthlyPKR, totalPaid, totalPaidPKR,
     totalCashIn, totalCashOut, cashInHand, realizedRevenue, realizedGrossProfit, retainedProfit, totalCapitalPool
   };
 };

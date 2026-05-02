@@ -225,7 +225,7 @@ button {
 
 /* Page body */
 .page-body {
-  padding: 24px 32px;
+  padding: 0 32px 24px 32px;
   max-width: 1400px;
   min-width: 0;
   width: 100%;
@@ -239,8 +239,13 @@ button {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
   flex-wrap: wrap;
+  margin-bottom: 24px;
+  position: sticky;
+  top: 0;
+  padding: 24px 0 16px 0;
+  background: var(--bg);
+  z-index: 50;
 }
 
 .page-title {
@@ -511,9 +516,13 @@ tr:hover td {
   }
 
   .page-body {
-    padding: 16px;
+    padding: 0 16px 16px 16px;
     height: auto;
     overflow: visible;
+  }
+
+  .top-bar {
+    padding: 16px 0;
   }
 }
 

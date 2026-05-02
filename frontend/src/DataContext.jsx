@@ -96,7 +96,7 @@ export const DataProvider = ({ children }) => {
     setLoading(true);
     try {
       const fetchSafe = async (url) => {
-        try { return await request(url); } catch (_e) { return null; }
+        try { return await request(url); } catch (err) { console.warn(`[MobileHub] Fetch ${url} failed:`, err.message); return null; }
       };
 
       const [inv, sls, exp, cf, hw, invs, pay, oi, ship, act, set] = await Promise.all([
@@ -167,7 +167,7 @@ export const DataProvider = ({ children }) => {
     try {
       const newObj = await request(`/api/${getPath(key)}`, { method: 'POST', body: JSON.stringify(obj) });
       setData(prev => ({ ...prev, [key]: [...(prev[key] || []), newObj] }));
-      await logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || obj.amountKRW || (obj.qty * (obj.pricePerUnit || obj.costPerUnit)) || null);
+      await logActivity('create', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || obj.purchasePrice || obj.amountKRW || (obj.qty * (obj.pricePerUnit || obj.costPerUnit || 0)) || null);
       if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
       showToast('Saved to cloud');
       return newObj;
@@ -181,7 +181,7 @@ export const DataProvider = ({ children }) => {
     try {
       const updated = await request(`/api/${getPath(key)}/${id}`, { method: 'PUT', body: JSON.stringify(obj) });
       setData(prev => ({ ...prev, [key]: (prev[key] || []).map(item => item._id === id ? updated : item) }));
-      await logActivity('update', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+      await logActivity('update', key, obj.modelName || obj.model || obj.buyer || obj.category || obj.name || 'item');
       if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
       showToast('Updated on cloud');
       return updated;

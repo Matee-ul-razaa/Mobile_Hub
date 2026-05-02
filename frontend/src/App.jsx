@@ -18,27 +18,40 @@ import Login from './pages/Login';
 import Capital from './pages/CapitalProfit';
 
 function App() {
-  const [user, setUser] = useState(() => localStorage.getItem('mobile_hub_token') ? localStorage.getItem('mobile_hub_user') : null);
+  const [user, setUser] = useState(() => {
+    const token = localStorage.getItem('mobile_hub_token');
+    const savedUser = localStorage.getItem('mobile_hub_user');
+    return (token && savedUser) ? savedUser : null;
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { logActivity, showConfirm } = useData();
 
+  // Listen for auth expiration (real 401 from backend)
   useEffect(() => {
     const handleExpired = () => {
+      localStorage.removeItem('mobile_hub_user');
+      localStorage.removeItem('mobile_hub_token');
       setUser(null);
       navigate('/login');
     };
     window.addEventListener('mobilehub-auth-expired', handleExpired);
-    if ((!user || !localStorage.getItem('mobile_hub_token')) && location.pathname !== '/login') {
+    return () => window.removeEventListener('mobilehub-auth-expired', handleExpired);
+  }, [navigate]);
+
+  // Redirect to login only if genuinely not authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('mobile_hub_token');
+    const savedUser = localStorage.getItem('mobile_hub_user');
+    if ((!user || !token || !savedUser) && location.pathname !== '/login') {
+      setUser(null);
       navigate('/login');
     }
-    return () => window.removeEventListener('mobilehub-auth-expired', handleExpired);
   }, [user, location.pathname, navigate]);
 
   const handleLogin = (u) => {
     setUser(u);
-    logActivity('login', 'auth', `${u === 'nadeem' ? 'Nadeem' : 'Bilawal'} signed in`);
     navigate('/');
   };
 
@@ -156,6 +169,7 @@ function App() {
           <Route path="/activity-log" element={<ActivityLog toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/settings" element={<Settings toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/capital" element={<Capital toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} />} />
         </Routes>
       </main>
     </div>

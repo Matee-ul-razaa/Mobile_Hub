@@ -186,7 +186,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
         )}
 
         <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(251, 146, 60, 0.1)', border: '1px solid rgba(251, 146, 60, 0.2)', borderRadius: '6px', color: '#fb923c', fontSize: '11px' }}>
-          Forgot password? Passwords are stored only in this browser. If forgotten, click "Reset login data" below — this only deletes the login info, not your business data.
+          Forgot password? Passwords are securely hashed and stored on the server. Contact your admin partner to reset via the database, or use the "Reset login data" button below to clear your local session (your business data is safe).
         </div>
         <button className="btn btn-sm" style={{ marginTop: '12px', color: 'var(--red)', borderColor: 'var(--red-soft)' }} onClick={handleResetLogin}>Reset login data</button>
       </div>

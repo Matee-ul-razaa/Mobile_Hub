@@ -105,7 +105,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
 };
 
 const CashflowModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ date: new Date().toISOString().slice(0,10), type: 'in', amount: 0, note: '' });
+  const [form, setForm] = useState({ date: new Date().toISOString().slice(0,10), type: 'in', source: '', amount: 0, note: '' });
 
   return (
     <div className="modal-overlay">
@@ -121,6 +121,7 @@ const CashflowModal = ({ onClose, onSave }) => {
             </select>
           </div>
         </div>
+        <div className="form-row"><label>Source / Detail *</label><input value={form.source} onChange={e=>setForm({...form, source:e.target.value})} placeholder="e.g. Sale payment, Shop rent, etc." /></div>
         <div className="form-row"><label>Amount (KRW) *</label><input type="number" value={form.amount} onChange={e=>setForm({...form, amount:Number(e.target.value)})} /></div>
         <div className="form-row"><label>Note</label><textarea value={form.note} onChange={e=>setForm({...form, note:e.target.value})} /></div>
         <div className="modal-actions">

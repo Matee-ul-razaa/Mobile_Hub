@@ -10,7 +10,7 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : true,
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 // Match both /api and / since Vercel rewrites might pass different path segments
 app.use('/api', apiRoutes);
