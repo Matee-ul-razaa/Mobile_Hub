@@ -2,13 +2,29 @@ import React from 'react';
 import { useData } from '../DataContext';
 
 const Settings = ({ toggleMenu, onLogout }) => {
-  const { data, updateSettings, clearActivity, wipeAllData, showToast, showConfirm } = useData();
+  const { data, updateSettings, restoreData, clearActivity, wipeAllData, showToast, showConfirm } = useData();
   const currentUser = localStorage.getItem('mobile_hub_user') || 'bilawal';
   const [activeAdmin, setActiveAdmin] = React.useState(currentUser);
   const [tempApiKey, setTempApiKey] = React.useState(data.settings?.apiKey || '');
   const [passwords, setPasswords] = React.useState({ current: '', new: '', confirm: '' });
+  const [businessInfo, setBusinessInfo] = React.useState({
+    businessName: data.settings?.businessName || 'Mobile Hub',
+    owner: data.settings?.owner || ''
+  });
 
-  const handlePasswordChange = () => {
+  const handleBusinessSave = async () => {
+    await updateSettings(businessInfo);
+  };
+
+  const handleResetLogin = () => {
+    showConfirm('Reset local login session? You will be signed out, but business data will remain safe.', () => {
+      localStorage.removeItem('mobile_hub_user');
+      localStorage.removeItem('mobile_hub_token');
+      window.location.href = '/login';
+    });
+  };
+
+  const handlePasswordChange = async () => {
     if (!passwords.current || !passwords.new || !passwords.confirm) {
       showToast('Please fill all password fields', 'danger');
       return;
@@ -20,12 +36,16 @@ const Settings = ({ toggleMenu, onLogout }) => {
     
     // Send to backend via updateSettings
     const usersUpdate = {
-      [activeAdmin]: { password: passwords.new }
+      [activeAdmin]: { currentPassword: passwords.current, password: passwords.new }
     };
     
-    updateSettings({ users: usersUpdate });
-    setPasswords({ current: '', new: '', confirm: '' });
-    showToast('Password updated successfully!');
+    try {
+      await updateSettings({ users: usersUpdate });
+      setPasswords({ current: '', new: '', confirm: '' });
+      showToast('Password updated successfully!');
+    } catch (_err) {
+      // updateSettings already shows error toast
+    }
   };
 
   const handleExportData = () => {
@@ -46,8 +66,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
       try {
         const imported = JSON.parse(evt.target.result);
         showConfirm('This will replace ALL current data with the backup. Proceed?', () => {
-          setData(imported);
-          showToast('Data restored successfully!');
+          restoreData(imported);
         });
       } catch (err) {
         showToast('Invalid backup file.', 'danger');
@@ -82,13 +101,13 @@ const Settings = ({ toggleMenu, onLogout }) => {
         <div className="card-header"><h3 className="card-title">Business Info</h3></div>
         <div className="form-row">
           <label>Business Name</label>
-          <input defaultValue="Mobile Hub" placeholder="e.g. Mobile Hub" />
+          <input value={businessInfo.businessName} onChange={e => setBusinessInfo({...businessInfo, businessName: e.target.value})} placeholder="e.g. Mobile Hub" />
         </div>
         <div className="form-row">
           <label>Owner Name</label>
-          <input placeholder="e.g. Bilawal" />
+          <input value={businessInfo.owner} onChange={e => setBusinessInfo({...businessInfo, owner: e.target.value})} placeholder="e.g. Bilawal" />
         </div>
-        <button className="btn btn-primary" style={{ marginTop: '10px' }}>Save</button>
+        <button className="btn btn-primary" style={{ marginTop: '10px' }} onClick={handleBusinessSave}>Save</button>
       </div>
 
       <div className="card" style={{ marginBottom: '20px' }}>
@@ -169,7 +188,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
         <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(251, 146, 60, 0.1)', border: '1px solid rgba(251, 146, 60, 0.2)', borderRadius: '6px', color: '#fb923c', fontSize: '11px' }}>
           Forgot password? Passwords are stored only in this browser. If forgotten, click "Reset login data" below — this only deletes the login info, not your business data.
         </div>
-        <button className="btn btn-sm" style={{ marginTop: '12px', color: 'var(--red)', borderColor: 'var(--red-soft)' }}>Reset login data</button>
+        <button className="btn btn-sm" style={{ marginTop: '12px', color: 'var(--red)', borderColor: 'var(--red-soft)' }} onClick={handleResetLogin}>Reset login data</button>
       </div>
 
       <div className="card" style={{ marginBottom: '20px' }}>
@@ -211,7 +230,7 @@ const Settings = ({ toggleMenu, onLogout }) => {
         <div className="page-sub" style={{ padding: '0 0 16px' }}>Your data lives inside this browser. Always export a backup regularly (especially before clearing browser data or switching devices).</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={handleExportData}>⬇ Export JSON Backup</button>
-          <button className="btn btn-sm">⬇ Export CSV (all tables)</button>
+          <button className="btn btn-sm" onClick={() => showToast('CSV export is not implemented yet. Use JSON backup for full restore.')}>⬇ Export CSV (all tables)</button>
           <label className="btn btn-sm" style={{ cursor: 'pointer' }}>
             ⬆ Import JSON
             <input type="file" style={{ display: 'none' }} onChange={handleImportData} accept=".json" />

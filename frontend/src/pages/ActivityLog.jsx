@@ -6,9 +6,6 @@ const ActivityLog = ({ toggleMenu, onLogout }) => {
   const [filterUser, setFilterUser] = useState('all');
 
   const filtered = data.activity.filter(a => {
-
-    if (a.action !== 'login') return false;
-    
     if (filterUser === 'all') return true;
     return a.user?.toLowerCase() === filterUser;
   });
@@ -20,7 +17,7 @@ const ActivityLog = ({ toggleMenu, onLogout }) => {
           <button className="menu-toggle" onClick={toggleMenu}>☰</button>
           <div>
             <h1 className="page-title">Activity Log</h1>
-            <div className="page-sub">Admin Sign-in History</div>
+            <div className="page-sub">Login and recent system activity</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>

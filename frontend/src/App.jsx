@@ -18,16 +18,22 @@ import Login from './pages/Login';
 import Capital from './pages/CapitalProfit';
 
 function App() {
-  const [user, setUser] = useState(localStorage.getItem('mobile_hub_user'));
+  const [user, setUser] = useState(() => localStorage.getItem('mobile_hub_token') ? localStorage.getItem('mobile_hub_user') : null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { logActivity, showConfirm } = useData();
 
   useEffect(() => {
-    if (!user && location.pathname !== '/login') {
+    const handleExpired = () => {
+      setUser(null);
+      navigate('/login');
+    };
+    window.addEventListener('mobilehub-auth-expired', handleExpired);
+    if ((!user || !localStorage.getItem('mobile_hub_token')) && location.pathname !== '/login') {
       navigate('/login');
     }
+    return () => window.removeEventListener('mobilehub-auth-expired', handleExpired);
   }, [user, location.pathname, navigate]);
 
   const handleLogin = (u) => {
@@ -39,6 +45,7 @@ function App() {
   const handleLogout = () => {
     showConfirm('Are you sure you want to sign out?', () => {
       localStorage.removeItem('mobile_hub_user');
+      localStorage.removeItem('mobile_hub_token');
       setUser(null);
       navigate('/login');
     });

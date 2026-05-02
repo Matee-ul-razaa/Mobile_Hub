@@ -44,7 +44,9 @@ export const agg = (data) => {
   const totalPaid = payouts.reduce((a,x)=>a+(+x.amount||0),0);
   const totalPaidPKR = payouts.reduce((a,x)=>a+(+x.amountPKR||0),0);
   
-  const cashInHand = manualCashIn - manualCashOut + hawalaIn + ownerCapital - totalExp - totalPaid;
+  const totalCashIn = manualCashIn + hawalaIn + ownerCapital;
+  const totalCashOut = manualCashOut + totalExp + totalPaid;
+  const cashInHand = totalCashIn - totalCashOut;
 
   // REALIZED PROFIT LOGIC (The "Real" Cash Profit)
   let realizedRevenue = 0, realizedCOGS = 0;
@@ -68,6 +70,6 @@ export const agg = (data) => {
     hawalaIn, hawalaPKR, hawalaDiscount, pendingReceivable,
     totalCapital, totalCapitalPKR, ownerCapital, ownerCapitalPKR,
     totalMonthly, totalPaid, totalPaidPKR,
-    cashInHand, realizedRevenue, realizedGrossProfit, retainedProfit, totalCapitalPool
+    totalCashIn, totalCashOut, cashInHand, realizedRevenue, realizedGrossProfit, retainedProfit, totalCapitalPool
   };
 };

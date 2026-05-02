@@ -3,8 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 const DataContext = createContext();
 
 const STORE_KEY = 'mobilex_v1';
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const AUTH_TOKEN_KEY = 'mobile_hub_token';
 
 const defaultData = {
   inventory: [],
@@ -20,18 +19,23 @@ const defaultData = {
   settings: { businessName: 'Mobile Hub', owner: '', users: {} }
 };
 
+const getAuthToken = () => localStorage.getItem(AUTH_TOKEN_KEY);
+const authHeaders = () => {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const DataProvider = ({ children }) => {
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const showConfirm = (msg, onConfirm) => {
-    setConfirmDialog({ msg, onConfirm });
-  };
+  const showConfirm = (msg, onConfirm) => setConfirmDialog({ msg, onConfirm });
 
   const [data, setData] = useState(() => {
     const raw = localStorage.getItem(STORE_KEY);
@@ -40,32 +44,14 @@ export const DataProvider = ({ children }) => {
       const parsed = JSON.parse(raw);
       for (const k in defaultData) if (!(k in parsed)) parsed[k] = defaultData[k];
       return parsed;
-    } catch (e) {
+    } catch (_e) {
       return defaultData;
     }
   });
 
-  const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
   }, [data]);
-
-  const logActivity = (action, entity, detail, amount = null) => {
-    const newAct = {
-      at: new Date().toISOString(),
-      user: localStorage.getItem('mobile_hub_user') || 'system',
-      action,
-      entity,
-      detail,
-      amount
-    };
-    setData(prev => ({
-      ...prev,
-      activity: [...prev.activity, newAct].slice(-1000)
-    }));
-  };
-
 
   const getPath = (key) => {
     const map = {
@@ -83,105 +69,149 @@ export const DataProvider = ({ children }) => {
     return map[key] || key;
   };
 
-  const addItem = async (key, obj) => {
+  const request = useCallback(async (path, options = {}) => {
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+        ...(options.headers || {})
+      }
+    });
+    let payload = null;
+    try { payload = await response.json(); } catch (_e) { payload = null; }
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('mobile_hub_user');
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        window.dispatchEvent(new Event('mobilehub-auth-expired'));
+      }
+      throw new Error(payload?.error || payload?.message || `Request failed (${response.status})`);
+    }
+    return payload;
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    if (!getAuthToken()) return;
+    setLoading(true);
     try {
-      const response = await fetch(`/api/${getPath(key)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(obj)
-      });
-      const newObj = await response.json();
+      const fetchSafe = async (url) => {
+        try { return await request(url); } catch (_e) { return null; }
+      };
+
+      const [inv, sls, exp, cf, hw, invs, pay, oi, ship, act, set] = await Promise.all([
+        fetchSafe('/api/inventory'),
+        fetchSafe('/api/sales'),
+        fetchSafe('/api/expenses'),
+        fetchSafe('/api/cashflow'),
+        fetchSafe('/api/hawala'),
+        fetchSafe('/api/investors'),
+        fetchSafe('/api/payouts'),
+        fetchSafe('/api/owner-investment'),
+        fetchSafe('/api/shipments'),
+        fetchSafe('/api/activity'),
+        fetchSafe('/api/settings')
+      ]);
+
       setData(prev => ({
         ...prev,
-        [key]: [...prev[key], newObj]
+        inventory: inv !== null ? inv : prev.inventory,
+        sales: sls !== null ? sls : prev.sales,
+        expenses: exp !== null ? exp : prev.expenses,
+        cashflow: cf !== null ? cf : prev.cashflow,
+        hawala: hw !== null ? hw : prev.hawala,
+        investors: invs !== null ? invs : prev.investors,
+        payouts: pay !== null ? pay : prev.payouts,
+        ownerInvestments: oi !== null ? oi : prev.ownerInvestments,
+        shipments: ship !== null ? ship : prev.shipments,
+        activity: act !== null ? act : prev.activity,
+        settings: (set !== null && set.businessName) ? set : prev.settings
       }));
-      logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || (obj.qty * (obj.pricePerUnit || obj.costPerUnit)) || null);
+    } finally {
+      setLoading(false);
+    }
+  }, [request]);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
+    const onAuth = () => fetchData();
+    window.addEventListener('mobilehub-auth-changed', onAuth);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('mobilehub-auth-changed', onAuth);
+    };
+  }, [fetchData]);
+
+  const logActivity = useCallback(async (action, entity, detail, amount = null) => {
+    const newAct = {
+      at: new Date().toISOString(),
+      user: localStorage.getItem('mobile_hub_user') || 'system',
+      action,
+      entity,
+      detail,
+      amount
+    };
+    setData(prev => ({ ...prev, activity: [...(prev.activity || []), newAct].slice(-1000) }));
+
+    if (getAuthToken()) {
+      try {
+        await request('/api/activity', { method: 'POST', body: JSON.stringify(newAct) });
+      } catch (_err) {
+        // Keep local log even if server activity write fails.
+      }
+    }
+  }, [request]);
+
+  const addItem = async (key, obj) => {
+    try {
+      const newObj = await request(`/api/${getPath(key)}`, { method: 'POST', body: JSON.stringify(obj) });
+      setData(prev => ({ ...prev, [key]: [...(prev[key] || []), newObj] }));
+      await logActivity('create', key, obj.model || obj.buyer || obj.category || obj.name || 'item', obj.amount || obj.amountKRW || (obj.qty * (obj.pricePerUnit || obj.costPerUnit)) || null);
+      if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
       showToast('Saved to cloud');
       return newObj;
     } catch (err) {
-      showToast('Failed to save to cloud', 'danger');
+      showToast(err.message || 'Failed to save to cloud', 'danger');
+      throw err;
     }
   };
 
   const updateItem = async (key, id, obj) => {
     try {
-      const response = await fetch(`/api/${getPath(key)}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(obj)
-      });
-      const updated = await response.json();
-      setData(prev => ({
-        ...prev,
-        [key]: prev[key].map(item => item._id === id ? updated : item)
-      }));
-      logActivity('update', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+      const updated = await request(`/api/${getPath(key)}/${id}`, { method: 'PUT', body: JSON.stringify(obj) });
+      setData(prev => ({ ...prev, [key]: (prev[key] || []).map(item => item._id === id ? updated : item) }));
+      await logActivity('update', key, obj.model || obj.buyer || obj.category || obj.name || 'item');
+      if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
       showToast('Updated on cloud');
+      return updated;
     } catch (err) {
-      showToast('Update failed', 'danger');
+      showToast(err.message || 'Update failed', 'danger');
+      throw err;
     }
   };
 
   const deleteItem = async (key, id) => {
     showConfirm(`Delete this ${key.slice(0, -1)}?`, async () => {
       try {
-        await fetch(`/api/${getPath(key)}/${id}`, { method: 'DELETE' });
-        setData(prev => ({
-          ...prev,
-          [key]: prev[key].filter(item => item._id !== id)
-        }));
-        logActivity('delete', key, id);
+        await request(`/api/${getPath(key)}/${id}`, { method: 'DELETE' });
+        setData(prev => ({ ...prev, [key]: (prev[key] || []).filter(item => item._id !== id) }));
+        await logActivity('delete', key, id);
+        if (['sales', 'hawala', 'inventory'].includes(key)) await fetchData();
         showToast('Deleted from cloud');
       } catch (err) {
-        showToast('Delete failed', 'danger');
+        showToast(err.message || 'Delete failed', 'danger');
       }
     });
   };
-
 
   const addInventory = (obj) => addItem('inventory', obj);
   const updateInventory = (id, obj) => updateItem('inventory', id, obj);
   const deleteInventory = (id) => deleteItem('inventory', id);
 
-  const addSale = (obj) => {
-    const res = addItem('sales', obj);
-
-    setData(prev => ({
-      ...prev,
-      inventory: prev.inventory.map(i => i.model === obj.model ? { ...i, soldQty: (i.soldQty || 0) + obj.qty } : i)
-    }));
-    return res;
-  };
-  const updateSale = (id, obj) => {
-    const prev = data.sales.find(s => s._id === id);
-    if (prev) {
-      setData(prevData => ({
-        ...prevData,
-        inventory: prevData.inventory.map(i => {
-          if (i.model === prev.model) return { ...i, soldQty: Math.max(0, i.soldQty - prev.qty) };
-          return i;
-        })
-      }));
-    }
-    updateItem('sales', id, obj);
-    setData(prevData => ({
-      ...prevData,
-      inventory: prevData.inventory.map(i => {
-        if (i.model === obj.model) return { ...i, soldQty: (i.soldQty || 0) + obj.qty };
-        return i;
-      })
-    }));
-  };
-  const deleteSale = (id) => {
-    const s = data.sales.find(x => x._id === id);
-    if (s) {
-      setData(prev => ({
-        ...prev,
-        inventory: prev.inventory.map(i => i.model === s.model ? { ...i, soldQty: Math.max(0, i.soldQty - s.qty) } : i)
-      }));
-    }
-    deleteItem('sales', id);
-  };
+  const addSale = (obj) => addItem('sales', obj);
+  const updateSale = (id, obj) => updateItem('sales', id, obj);
+  const deleteSale = (id) => deleteItem('sales', id);
 
   const addExpense = (obj) => addItem('expenses', obj);
   const updateExpense = (id, obj) => updateItem('expenses', id, obj);
@@ -211,75 +241,34 @@ export const DataProvider = ({ children }) => {
   const updateCashflow = (id, obj) => updateItem('cashflow', id, obj);
   const deleteCashflow = (id) => deleteItem('cashflow', id);
 
-  // SYNC WITH BACKEND
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const fetchSafe = async (url) => {
-          try {
-            const r = await fetch(url);
-            if (!r.ok) return null; // Error
-            return await r.json();
-          } catch (e) { return null; }
-        };
-
-        const [inv, sls, exp, cf, hw, invs, pay, oi, ship, act, set] = await Promise.all([
-          fetchSafe('/api/inventory'),
-          fetchSafe('/api/sales'),
-          fetchSafe('/api/expenses'),
-          fetchSafe('/api/cashflow'),
-          fetchSafe('/api/hawala'),
-          fetchSafe('/api/investors'),
-          fetchSafe('/api/payouts'),
-          fetchSafe('/api/owner-investment'),
-          fetchSafe('/api/shipments'),
-          fetchSafe('/api/activity'),
-          fetchSafe('/api/settings')
-        ]);
-
-        setData(prev => ({
-          ...prev,
-          inventory: inv !== null ? inv : prev.inventory,
-          sales: sls !== null ? sls : prev.sales,
-          expenses: exp !== null ? exp : prev.expenses,
-          cashflow: cf !== null ? cf : prev.cashflow,
-          hawala: hw !== null ? hw : prev.hawala,
-          investors: invs !== null ? invs : prev.investors,
-          payouts: pay !== null ? pay : prev.payouts,
-          ownerInvestments: oi !== null ? oi : prev.ownerInvestments,
-          shipments: ship !== null ? ship : prev.shipments,
-          activity: act !== null ? act : prev.activity,
-          settings: (set !== null && set.businessName) ? set : prev.settings
-        }));
-      } catch (err) {
-        console.error('Initial fetch error:', err);
-      }
-    };
-    fetchData();
-    // Refresh every 30 seconds to keep devices in sync
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
   const updateSettings = async (obj) => {
     try {
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(obj)
-      });
-      const updated = await response.json();
+      const updated = await request('/api/settings', { method: 'PUT', body: JSON.stringify(obj) });
       setData(prev => ({ ...prev, settings: updated }));
-      logActivity('update', 'settings', 'Business settings updated');
+      await logActivity('update', 'settings', 'Business settings updated');
+      showToast('Settings saved');
+      return updated;
     } catch (err) {
-      console.error('Update settings error:', err);
-      showToast('Failed to save settings to server', 'danger');
+      showToast(err.message || 'Failed to save settings to server', 'danger');
+      throw err;
+    }
+  };
+
+  const restoreData = async (imported) => {
+    try {
+      await request('/api/restore-data', { method: 'POST', body: JSON.stringify(imported) });
+      setData({ ...defaultData, ...imported });
+      await fetchData();
+      showToast('Data restored successfully!');
+    } catch (err) {
+      showToast(err.message || 'Restore failed', 'danger');
+      throw err;
     }
   };
 
   const wipeAllData = async () => {
     try {
-      await fetch('/api/reset-all', { method: 'POST' });
+      await request('/api/reset-all', { method: 'POST' });
       setData(prev => ({
         ...prev,
         inventory: [], sales: [], expenses: [], cashflow: [],
@@ -287,24 +276,24 @@ export const DataProvider = ({ children }) => {
       }));
       showToast('All business data has been wiped from server.', 'danger');
     } catch (err) {
-      showToast('Reset failed', 'danger');
+      showToast(err.message || 'Reset failed', 'danger');
     }
   };
 
   const clearActivity = async () => {
     showConfirm('Clear all activity logs? This cannot be undone.', async () => {
       try {
-        await fetch('/api/activity', { method: 'DELETE' });
+        await request('/api/activity', { method: 'DELETE' });
         setData(prev => ({ ...prev, activity: [] }));
         showToast('Activity logs cleared');
       } catch (err) {
-        showToast('Failed to clear logs', 'danger');
+        showToast(err.message || 'Failed to clear logs', 'danger');
       }
     });
   };
 
   const value = {
-    data, loading,
+    data, loading, refreshData: fetchData,
     addInventory, updateInventory, deleteInventory,
     addSale, updateSale, deleteSale,
     addExpense, updateExpense, deleteExpense,
@@ -314,45 +303,30 @@ export const DataProvider = ({ children }) => {
     addShipment, updateShipment, deleteShipment,
     addOwnerInvestment, updateOwnerInvestment, deleteOwnerInvestment,
     addCashflow, updateCashflow, deleteCashflow,
-    updateSettings, logActivity, clearActivity, wipeAllData,
+    updateSettings, restoreData, logActivity, clearActivity, wipeAllData,
     showToast, showConfirm
   };
 
   return (
     <DataContext.Provider value={value}>
       {children}
-      
       {toast && (
         <div className="custom-toast" style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: toast.type === 'danger' ? 'var(--red)' : 'var(--teal)',
-          color: '#fff',
-          padding: '20px 40px',
-          borderRadius: '12px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-          zIndex: 9999,
-          fontWeight: 'bold',
-          fontSize: '18px',
-          textAlign: 'center',
-          animation: 'fadeIn 0.2s ease-out'
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          background: toast.type === 'danger' ? 'var(--red)' : 'var(--teal)', color: '#fff',
+          padding: '20px 40px', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+          zIndex: 9999, fontWeight: 'bold', fontSize: '18px', textAlign: 'center', animation: 'fadeIn 0.2s ease-out'
         }}>
           {toast.msg}
         </div>
       )}
-
       {confirmDialog && (
         <div className="backdrop show" style={{ zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="card" style={{ maxWidth: '400px', width: '90%', textAlign: 'center', padding: '30px' }}>
             <h3 style={{ marginBottom: '20px', fontSize: '18px' }}>{confirmDialog.msg}</h3>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
               <button className="btn" onClick={() => setConfirmDialog(null)}>Cancel</button>
-              <button className="btn btn-danger" onClick={() => {
-                confirmDialog.onConfirm();
-                setConfirmDialog(null);
-              }}>Yes, Proceed</button>
+              <button className="btn btn-danger" onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }}>Yes, Proceed</button>
             </div>
           </div>
         </div>

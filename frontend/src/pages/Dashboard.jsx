@@ -237,7 +237,7 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
               </tr>
             </thead>
             <tbody>
-              {data.activity.slice(-5).reverse().map((act, i) => {
+              {(data.activity || []).slice(-5).reverse().map((act, i) => {
                 const isPositive = act.action === 'create' && (act.entity === 'sales' || act.entity === 'cashflow' || act.entity === 'ownerInvestments');
                 const isNegative = act.action === 'create' && (act.entity === 'expenses' || act.entity === 'payouts');
                 return (

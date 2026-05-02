@@ -6,7 +6,10 @@ const apiRoutes = require('./_lib/routes/api');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : true,
+  credentials: true
+}));
 app.use(express.json());
 
 // Match both /api and / since Vercel rewrites might pass different path segments

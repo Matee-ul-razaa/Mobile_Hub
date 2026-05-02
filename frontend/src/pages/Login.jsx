@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../DataContext';
 
 const Login = ({ onLogin }) => {
-  const { data, logActivity } = useData();
+  const { logActivity } = useData();
   const [selectedUser, setSelectedUser] = useState(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -31,7 +31,15 @@ const Login = ({ onLogin }) => {
 
       if (response.ok) {
         localStorage.setItem('mobile_hub_user', selectedUser);
-        logActivity('login', 'auth', `${selectedUser === 'nadeem' ? 'Nadeem' : 'Bilawal'} signed in`);
+        localStorage.setItem('mobile_hub_token', result.token);
+
+        await logActivity(
+          'login',
+          'auth',
+          `${selectedUser === 'nadeem' ? 'Nadeem' : 'Bilawal'} signed in`
+        );
+
+        window.dispatchEvent(new Event('mobilehub-auth-changed'));
         onLogin(selectedUser);
       } else {
         setError(`✗ ${result.error || 'Incorrect password'}`);
