@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const inventorySchema = new mongoose.Schema({
+  date:         { type: String, default: () => new Date().toISOString().slice(0, 10) },
   modelName:    { type: String, required: true, trim: true },
   modelNumber:  { type: String, trim: true, default: '' },
   storage:      { type: String, trim: true, default: '' },
