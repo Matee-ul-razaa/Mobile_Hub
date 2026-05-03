@@ -29,4 +29,10 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// Global error handler to catch "next is not a function" and other weirdness
+app.use((err, req, res, next) => {
+  console.error('[API ERROR]', err);
+  res.status(500).json({ error: err.message || 'Internal Server Error' });
+});
+
 module.exports = app;

@@ -16,12 +16,11 @@ const shipmentSchema = new mongoose.Schema({
   createdBy: { type: String, default: '' },
 }, { timestamps: true });
 
-shipmentSchema.pre('validate', function(next) {
+shipmentSchema.pre('validate', function() {
   if (!this.date && this.sentDate) this.date = this.sentDate;
   if (!this.sentDate && this.date) this.sentDate = this.date;
   if (!this.trackingNumber && this.trackingNum) this.trackingNumber = this.trackingNum;
   if (!this.trackingNum && this.trackingNumber) this.trackingNum = this.trackingNumber;
-  next();
 });
 
 module.exports = mongoose.model('Shipment', shipmentSchema);
