@@ -22,12 +22,16 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
       months.push(m);
     }
     return months.map(m => {
-      const inflow = (data.hawala || []).filter(h => ym(h.date) === m).reduce((s, x) => s + (x.amountKRW || 0), 0) +
-        (data.cashflow || []).filter(c => c.type === 'in' && ym(c.date) === m).reduce((s, x) => s + (x.amount || 0), 0) +
-        (data.ownerInvestments || []).filter(o => ym(o.date) === m).reduce((s, x) => s + (x.amountKRW || 0), 0);
-      const outflow = (data.expenses || []).filter(e => ym(e.date) === m).reduce((s, x) => s + (x.amount || 0), 0) +
-        (data.cashflow || []).filter(c => c.type === 'out' && ym(c.date) === m).reduce((s, x) => s + (x.amount || 0), 0) +
-        (data.payouts || []).filter(p => ym(p.date) === m).reduce((s, x) => s + (x.amount || 0), 0);
+      const inflow = 
+        (data.hawala || []).filter(h => ym(h.date) === m).reduce((s, x) => s + (Number(x.amountKRW) || 0), 0) +
+        (data.cashflow || []).filter(c => c.type === 'in' && ym(c.date) === m).reduce((s, x) => s + (Number(x.amount) || 0), 0) +
+        (data.ownerInvestments || []).filter(o => ym(o.date) === m).reduce((s, x) => s + (Number(x.amountKRW) || 0), 0);
+      const outflow = 
+        (data.inventory || []).filter(i => ym(i.date || i.createdAt) === m).reduce((s, x) => s + (Number(x.purchasePrice) || 0), 0) +
+        (data.expenses || []).filter(e => ym(e.date) === m).reduce((s, x) => s + (Number(x.amount) || 0), 0) +
+        (data.cashflow || []).filter(c => c.type === 'out' && ym(c.date) === m).reduce((s, x) => s + (Number(x.amount) || 0), 0) +
+        (data.payouts || []).filter(p => ym(p.date) === m).reduce((s, x) => s + (Number(x.amount) || 0), 0) +
+        (data.hawala || []).filter(h => ym(h.date) === m).reduce((s, x) => s + (Number(x.discountKRW) || 0), 0);
       return { name: m, In: inflow, Out: outflow };
     });
   };

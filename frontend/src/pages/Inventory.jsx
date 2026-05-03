@@ -22,7 +22,8 @@ const Inventory = ({ toggleMenu, onLogout }) => {
            (item.imei1 || '').includes(q) ||
            (item.imei2 || '').includes(q) ||
            (item.color || '').toLowerCase().includes(q) ||
-           (item.storage || '').toLowerCase().includes(q);
+           (item.storage || '').toLowerCase().includes(q) ||
+           (item.date || '').includes(q);
   });
 
   // Parse the Korean invoice format (Excel file from phone wholesaler)
@@ -62,17 +63,21 @@ const Inventory = ({ toggleMenu, onLogout }) => {
         }
 
         const headers = rows[headerIdx].map(h => String(h || '').trim());
-        const colIdx = (name) => headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
+        const colIdx = (names) => {
+          const nameList = Array.isArray(names) ? names : [names];
+          return headers.findIndex(h => nameList.some(name => h.toLowerCase().includes(name.toLowerCase())));
+        };
 
-        const iModelName = colIdx('Model Name');
-        const iModelNum = colIdx('Model Number');
-        const iCapacity = colIdx('Capacity');
+        const iModelName = colIdx(['Model Name', 'Model']);
+        const iModelNum = colIdx(['Model Number', 'Model No']);
+        const iCapacity = colIdx(['Capacity', 'Storage', 'GB', 'Size']);
         const iColor = colIdx('Color');
-        const iIMEI = headers.findIndex(h => h === 'IMEI');
-        const iIMEI2 = headers.findIndex(h => h === 'IMEI2');
+        const iIMEI = colIdx(['IMEI1', 'IMEI 1', 'IMEI', 'S/N', 'Serial']);
+        const iIMEI2 = colIdx(['IMEI2', 'IMEI 2']);
         const iPurchasePrice = colIdx('Purchase Price');
         const iActualPrice = colIdx('Actual Purchase Price');
-        const iMemo = colIdx('Product Memo');
+        const iMemo = colIdx(['Product Memo', 'Notes', 'Memo']);
+        const iDate = colIdx('Date');
 
         let success = 0, failed = 0;
         const errors = [];
@@ -95,6 +100,7 @@ const Inventory = ({ toggleMenu, onLogout }) => {
               imei2: iIMEI2 >= 0 ? String(row[iIMEI2] || '').trim() : '',
               purchasePrice: parseInvoicePrice(priceRaw),
               notes: iMemo >= 0 ? String(row[iMemo] || '').trim() : '',
+              date: iDate >= 0 ? String(row[iDate] || '').trim() : new Date().toISOString().slice(0, 10),
             });
             success++;
           } catch (err) {
@@ -129,6 +135,7 @@ const Inventory = ({ toggleMenu, onLogout }) => {
       'Purchase Price': x.purchasePrice || 0,
       'Status': x.status || 'In Stock',
       'Notes': x.notes || '',
+      'Date': x.date || '',
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -146,6 +153,7 @@ const Inventory = ({ toggleMenu, onLogout }) => {
       'IMEI2': '354321295462958',
       'Purchase Price': 860000,
       'Notes': 'battery health: 86.5%',
+      'Date': new Date().toISOString().slice(0, 10),
     }];
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -164,12 +172,12 @@ const Inventory = ({ toggleMenu, onLogout }) => {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button className="btn" onClick={handleTemplate}>⬇ Template</button>
-          <button className="btn" onClick={handleExport}>⬇ Export</button>
+          <button className="btn" onClick={handleTemplate}>📄 Template</button>
           <label className="btn" style={{ cursor: 'pointer' }}>
-            ⬆ Import Invoice
+            📥 Import Excel
             <input type="file" style={{ display: 'none' }} onChange={handleImport} accept=".xlsx,.xls,.txt" />
           </label>
+          <button className="btn" onClick={handleExport}>⬇ Export Excel</button>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Add Phone</button>
           <button className="btn btn-danger" onClick={onLogout}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
@@ -216,6 +224,7 @@ const Inventory = ({ toggleMenu, onLogout }) => {
           <table>
             <thead>
               <tr>
+                <th>DATE</th>
                 <th>MODEL</th>
                 <th>STORAGE</th>
                 <th>COLOR</th>
@@ -230,6 +239,7 @@ const Inventory = ({ toggleMenu, onLogout }) => {
             <tbody>
               {filtered.map(item => (
                 <tr key={item._id}>
+                  <td style={{ fontSize: '11px' }}>{item.date || item.createdAt?.slice(0, 10)}</td>
                   <td>
                     <strong>{item.modelName}</strong>
                     {item.modelNumber && <div className="muted" style={{ fontSize: '11px' }}>{item.modelNumber}</div>}
@@ -276,6 +286,7 @@ const Inventory = ({ toggleMenu, onLogout }) => {
 
 const InventoryModal = ({ item, onClose, onSave }) => {
   const [form, setForm] = useState(item || {
+    date: new Date().toISOString().slice(0, 10),
     modelName: '', modelNumber: '', storage: '', color: '',
     imei1: '', imei2: '', purchasePrice: 0, notes: ''
   });
@@ -284,6 +295,7 @@ const InventoryModal = ({ item, onClose, onSave }) => {
     <div className="modal-overlay">
       <div className="modal">
         <div className="card-header"><h3 className="card-title">{item ? 'Edit' : 'Add'} Phone</h3></div>
+        <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
         <div className="form-row-2">
           <div className="form-row"><label>Model Name *</label><input value={form.modelName} onChange={e => setForm({ ...form, modelName: e.target.value })} placeholder="iPhone 15 Pro" /></div>
           <div className="form-row"><label>Model Number</label><input value={form.modelNumber} onChange={e => setForm({ ...form, modelNumber: e.target.value })} placeholder="A3102" /></div>

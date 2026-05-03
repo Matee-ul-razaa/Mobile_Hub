@@ -1,4 +1,7 @@
-export const fmtKRW = n => '₩' + (Number(n)||0).toLocaleString('en-US', {maximumFractionDigits:0});
+export const fmtKRW = n => {
+  const val = Number(n) || 0;
+  return (val < 0 ? '-' : '') + '₩' + Math.abs(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
+};
 export const fmtNum = n => (Number(n)||0).toLocaleString('en-US', {maximumFractionDigits:0});
 export const todayISO = () => new Date().toISOString().slice(0,10);
 export const ym = d => (d||todayISO()).slice(0,7);
@@ -20,6 +23,7 @@ export const agg = (data) => {
   const invValue = inStock.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
   const invUnits = inStock.length;
   const salesRev = sales.reduce((a,x)=> a + x.qty * x.pricePerUnit, 0);
+  const salesUnits = sales.reduce((a,x)=> a + (Number(x.qty)||0), 0);
   
   // COGS: find purchase price from inventory for each sale
   const salesCOGS = sales.reduce((a,x)=>{
@@ -56,9 +60,13 @@ export const agg = (data) => {
   const totalMonthlyPKR = investors.reduce((a,x)=>a+(+x.monthlyPayoutPKR||0),0);
   const totalPaid = payouts.reduce((a,x)=>a+(+x.amount||0),0);
   const totalPaidPKR = payouts.reduce((a,x)=>a+(+x.amountPKR||0),0);
-  
-  const totalCashIn = manualCashIn + hawalaIn + ownerCapital;
-  const totalCashOut = manualCashOut + totalExp + totalPaid;
+  // Total cost of ALL phones ever purchased (cash that left your hand)
+  const invTotalCost = inventory.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
+
+  // CASH IN = all sources of money arriving
+  const totalCashIn = ownerCapital + totalCapital + hawalaIn + manualCashIn;
+  // CASH OUT = all sources of money leaving
+  const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaDiscount + manualCashOut;
   const cashInHand = totalCashIn - totalCashOut;
 
   // REALIZED PROFIT LOGIC (The "Real" Cash Profit)
@@ -85,7 +93,7 @@ export const agg = (data) => {
   const totalCapitalPool = totalCapital + ownerCapital + retainedProfit;
 
   return {
-    invValue, invUnits, salesRev, salesCOGS, grossProfit, totalExp, netProfit,
+    invValue, invUnits, salesRev, salesUnits, salesCOGS, grossProfit, totalExp, netProfit,
     hawalaIn, hawalaPKR, hawalaDiscount, pendingReceivable,
     totalCapital, totalCapitalPKR, ownerCapital, ownerCapitalPKR,
     totalMonthly, totalMonthlyPKR, totalPaid, totalPaidPKR,

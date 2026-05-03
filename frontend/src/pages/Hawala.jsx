@@ -77,8 +77,8 @@ const Hawala = ({ toggleMenu, onLogout }) => {
                   <td><strong>{h.buyer}</strong></td>
                   <td>{h.receiverName || '—'}</td>
                   <td className="num">₨{fmtNum(h.amountPKR)}</td>
-                  <td className="num pos"><strong>+{fmtKRW(h.amountKRW)}</strong></td>
-                  <td className="num neg">{h.discountKRW ? `−${fmtKRW(h.discountKRW)}` : '—'}</td>
+                  <td className="num pos"><strong>{fmtKRW(h.amountKRW)}</strong></td>
+                  <td className="num neg">{h.discountKRW ? fmtKRW(h.discountKRW) : '—'}</td>
                   <td>
                     <div className="inline-actions">
                       <button className="btn btn-sm" onClick={() => { setEditingItem(h); setShowModal(true); }}>Edit</button>

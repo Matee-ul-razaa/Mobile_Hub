@@ -1,12 +1,153 @@
 import React, { useState } from 'react';
 import { useData } from '../DataContext';
-import { fmtKRW, agg } from '../utils';
+import { fmtKRW } from '../utils';
 
 const Cashflow = ({ toggleMenu, onLogout }) => {
   const { data, addCashflow, deleteCashflow } = useData();
   const [showModal, setShowModal] = useState(false);
 
-  const a = agg(data);
+  // Build a unified list of ALL cash movements
+  const allMovements = [];
+
+  // 1. Manual cashflow entries
+  (data.cashflow || []).forEach(c => {
+    allMovements.push({
+      _id: c._id,
+      date: c.date,
+      type: c.type,
+      source: c.source || '—',
+      origin: 'Manual',
+      note: c.note || '',
+      amount: c.amount || 0,
+      deletable: true,
+    });
+  });
+
+  // 2. Fazi Cash (Hawala) — always Cash In
+  (data.hawala || []).forEach(h => {
+    allMovements.push({
+      _id: `hawala-${h._id}`,
+      date: h.date,
+      type: 'in',
+      source: `${h.buyer} → Fazi Cash`,
+      origin: 'Fazi Cash',
+      note: h.note || '',
+      amount: h.amountKRW || 0,
+      deletable: false,
+    });
+  });
+
+  // 3. Expenses — always Cash Out
+  (data.expenses || []).forEach(e => {
+    allMovements.push({
+      _id: `exp-${e._id}`,
+      date: e.date,
+      type: 'out',
+      source: e.category || 'Expense',
+      origin: 'Expense',
+      note: e.note || '',
+      amount: e.amount || 0,
+      deletable: false,
+    });
+  });
+
+  // 4. Investor Payouts — always Cash Out
+  (data.payouts || []).forEach(p => {
+    const inv = (data.investors || []).find(i => i._id === p.investorId);
+    allMovements.push({
+      _id: `pay-${p._id}`,
+      date: p.date,
+      type: 'out',
+      source: inv ? `Payout → ${inv.name}` : 'Investor Payout',
+      origin: 'Payout',
+      note: p.note || '',
+      amount: p.amount || 0,
+      deletable: false,
+    });
+  });
+
+  // 5. Owner Investments — always Cash In
+  (data.ownerInvestments || []).forEach(o => {
+    allMovements.push({
+      _id: `own-${o._id}`,
+      date: o.date,
+      type: 'in',
+      source: 'Owner Investment',
+      origin: 'Investment',
+      note: o.note || '',
+      amount: o.amountKRW || 0,
+      deletable: false,
+    });
+  });
+
+  // 6. Investor Capital — always Cash In
+  (data.investors || []).forEach(inv => {
+    if (Number(inv.capital) > 0) {
+      allMovements.push({
+        _id: `inv-cap-${inv._id}`,
+        date: inv.createdAt ? inv.createdAt.slice(0, 10) : '',
+        type: 'in',
+        source: `${inv.name} — Capital`,
+        origin: 'Investor',
+        note: '',
+        amount: Number(inv.capital) || 0,
+        deletable: false,
+      });
+    }
+  });
+
+  // 7. Inventory Purchases — always Cash Out
+  (data.inventory || []).forEach(item => {
+    if (Number(item.purchasePrice) > 0) {
+      allMovements.push({
+        _id: `inv-buy-${item._id}`,
+        date: item.date || (item.createdAt ? item.createdAt.slice(0, 10) : ''),
+        type: 'out',
+        source: `Buy: ${item.modelName}`,
+        origin: 'Inventory',
+        note: item.imei1 || '',
+        amount: Number(item.purchasePrice) || 0,
+        deletable: false,
+      });
+    }
+  });
+
+  // 8. Hawala Discounts — always Cash Out
+  (data.hawala || []).forEach(h => {
+    if (Number(h.discountKRW) > 0) {
+      allMovements.push({
+        _id: `hawala-disc-${h._id}`,
+        date: h.date,
+        type: 'out',
+        source: `${h.buyer} — Discount`,
+        origin: 'Discount',
+        note: h.note || '',
+        amount: Number(h.discountKRW) || 0,
+        deletable: false,
+      });
+    }
+  });
+
+  // Sort by date descending
+  allMovements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const totalIn = allMovements.filter(m => m.type === 'in').reduce((s, m) => s + m.amount, 0);
+  const totalOut = allMovements.filter(m => m.type === 'out').reduce((s, m) => s + m.amount, 0);
+  const net = totalIn - totalOut;
+
+  const originColor = (origin) => {
+    switch (origin) {
+      case 'Manual': return 'var(--surface-2)';
+      case 'Fazi Cash': return '#1e40af';
+      case 'Expense': return '#b91c1c';
+      case 'Payout': return '#b45309';
+      case 'Investment': return '#047857';
+      case 'Investor': return '#6d28d9';
+      case 'Inventory': return '#0f766e';
+      case 'Discount': return '#db2777';
+      default: return 'var(--surface-2)';
+    }
+  };
 
   return (
     <div>
@@ -34,22 +175,24 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
       <div className="kpi-grid">
         <div className="kpi">
           <div className="kpi-label">TOTAL CASH IN</div>
-          <div className="kpi-value pos">{fmtKRW(a.totalCashIn)}</div>
+          <div className="kpi-value pos">{fmtKRW(totalIn)}</div>
+          <div className="kpi-sub">{allMovements.filter(m => m.type === 'in').length} inflow entries</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">TOTAL CASH OUT</div>
-          <div className="kpi-value neg">{fmtKRW(a.totalCashOut)}</div>
+          <div className="kpi-value neg">{fmtKRW(totalOut)}</div>
+          <div className="kpi-sub">{allMovements.filter(m => m.type === 'out').length} outflow entries</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">NET</div>
-          <div className="kpi-value brand">{fmtKRW(a.cashInHand)}</div>
+          <div className={`kpi-value ${net >= 0 ? 'pos' : 'neg'}`}>{fmtKRW(net)}</div>
         </div>
       </div>
 
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">All Cash Movement</h3>
-          <div className="muted" style={{ fontSize: '11px' }}>Includes manual entries, Fazi Cash, expenses, payouts</div>
+          <div className="muted" style={{ fontSize: '11px' }}>{allMovements.length} total entries from all sources</div>
         </div>
         <div className="table-wrap">
           <table>
@@ -65,7 +208,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
               </tr>
             </thead>
             <tbody>
-              {[...data.cashflow].reverse().map(c => (
+              {allMovements.map(c => (
                 <tr key={c._id}>
                   <td>{c.date}</td>
                   <td>
@@ -73,19 +216,28 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
                       {c.type === 'in' ? 'IN' : 'OUT'}
                     </span>
                   </td>
-                  <td>{c.source || '—'}</td>
-                  <td><span className="badge" style={{ background: 'var(--surface-2)', color: 'var(--text-3)', fontSize: '10px' }}>{c.origin || 'Manual'}</span></td>
+                  <td>{c.source}</td>
+                  <td>
+                    <span className="badge" style={{ background: originColor(c.origin), color: '#fff', fontSize: '10px', padding: '2px 6px' }}>
+                      {c.origin}
+                    </span>
+                  </td>
                   <td>{c.note}</td>
                   <td className={`num ${c.type === 'in' ? 'pos' : 'neg'}`}>
                     <strong>{c.type === 'in' ? '+' : '−'}{fmtKRW(c.amount)}</strong>
                   </td>
                   <td>
-                    <div className="inline-actions">
-                      <button className="btn btn-sm btn-danger" onClick={() => deleteCashflow(c._id)}>Del</button>
-                    </div>
+                    {c.deletable ? (
+                      <div className="inline-actions">
+                        <button className="btn btn-sm btn-danger" onClick={() => deleteCashflow(c._id)}>Del</button>
+                      </div>
+                    ) : (
+                      <span className="muted" style={{ fontSize: '10px' }}>via {c.origin}</span>
+                    )}
                   </td>
                 </tr>
               ))}
+              {allMovements.length === 0 && <tr><td colSpan="7" className="empty">No cash movements yet</td></tr>}
             </tbody>
           </table>
         </div>
