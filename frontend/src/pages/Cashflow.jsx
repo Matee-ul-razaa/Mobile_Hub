@@ -1,10 +1,44 @@
 import React, { useState } from 'react';
 import { useData } from '../DataContext';
 import { fmtKRW } from '../utils';
+import * as XLSX from 'xlsx';
 
 const Cashflow = ({ toggleMenu, onLogout }) => {
   const { data, addCashflow, deleteCashflow } = useData();
   const [showModal, setShowModal] = useState(false);
+
+  const handleDownloadStatement = () => {
+    const reportData = allMovements.map(m => ({
+      'Date': m.date,
+      'Type': m.type === 'in' ? 'DEPOSIT' : 'WITHDRAWAL',
+      'Source / Detail': m.source,
+      'Category (Origin)': m.origin,
+      'Note': m.note,
+      'Amount (KRW)': m.amount,
+      'Balance (KRW)': 0 // We'll calculate this below
+    }));
+
+    // Calculate running balance (from oldest to newest)
+    let balance = 0;
+    const sortedOldToNew = [...reportData].reverse();
+    sortedOldToNew.forEach(row => {
+      if (row.Type === 'DEPOSIT') balance += row['Amount (KRW)'];
+      else balance -= row['Amount (KRW)'];
+      row['Balance (KRW)'] = balance;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(sortedOldToNew.reverse());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Statement");
+    
+    // Auto-size columns
+    const wscols = [
+      {wch: 12}, {wch: 15}, {wch: 30}, {wch: 15}, {wch: 30}, {wch: 15}, {wch: 15}
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.writeFile(wb, `MobileHub_Statement_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
 
   // Build a unified list of ALL cash movements
   const allMovements = [];
@@ -160,6 +194,14 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button className="btn" onClick={handleDownloadStatement} style={{ borderColor: 'var(--brand)', color: 'var(--brand)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download Statement
+          </button>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Entry</button>
           <button className="btn btn-danger" onClick={onLogout}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
