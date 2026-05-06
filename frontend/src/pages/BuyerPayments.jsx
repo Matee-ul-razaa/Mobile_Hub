@@ -47,6 +47,10 @@ const BuyerPayments = ({ toggleMenu, onLogout }) => {
              <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-1)', fontSize: '12px' }} />
              <span className="muted">To:</span>
              <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-1)', fontSize: '12px' }} />
+             <button onClick={() => {
+                setFromDate('2000-01-01');
+                setToDate(new Date().toISOString().slice(0, 10));
+             }} style={{ color: 'var(--brand)', fontWeight: '600', marginLeft: '5px', padding: '2px 5px' }}>Reset</button>
           </div>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Record Payment</button>
           <button className="btn btn-danger" onClick={onLogout}>
