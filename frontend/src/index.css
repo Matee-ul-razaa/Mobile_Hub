@@ -225,25 +225,17 @@ button {
 
 /* Page body */
 .page-body {
-  padding: 0 32px 24px 32px;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-width: 0;
+  padding: 0 40px 24px 40px;
   width: 100%;
+  min-width: 0;
   height: 100vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 2500px) {
   .page-body {
-    max-width: 1800px;
-  }
-}
-
-@media (min-width: 2000px) {
-  .page-body {
-    max-width: 2200px;
+    padding: 0 60px 40px 60px;
   }
 }
 
