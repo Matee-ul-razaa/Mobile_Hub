@@ -16,6 +16,7 @@ const defaultData = {
   ownerInvestments: [],
   activity: [],
   shipments: [],
+  buyerPayments: [],
   settings: { businessName: 'Mobile Hub', owner: '', users: {} }
 };
 
@@ -64,6 +65,7 @@ export const DataProvider = ({ children }) => {
       payouts: 'payouts',
       ownerInvestments: 'owner-investment',
       shipments: 'shipments',
+      buyerPayments: 'buyer-payments',
       activity: 'activity'
     };
     return map[key] || key;
@@ -99,7 +101,7 @@ export const DataProvider = ({ children }) => {
         try { return await request(url); } catch (err) { console.warn(`[MobileHub] Fetch ${url} failed:`, err.message); return null; }
       };
 
-      const [inv, sls, exp, cf, hw, invs, pay, oi, ship, act, set] = await Promise.all([
+      const [inv, sls, exp, cf, hw, invs, pay, oi, ship, bp, act, set] = await Promise.all([
         fetchSafe('/api/inventory'),
         fetchSafe('/api/sales'),
         fetchSafe('/api/expenses'),
@@ -109,6 +111,7 @@ export const DataProvider = ({ children }) => {
         fetchSafe('/api/payouts'),
         fetchSafe('/api/owner-investment'),
         fetchSafe('/api/shipments'),
+        fetchSafe('/api/buyer-payments'),
         fetchSafe('/api/activity'),
         fetchSafe('/api/settings')
       ]);
@@ -124,6 +127,7 @@ export const DataProvider = ({ children }) => {
         payouts: pay !== null ? pay : prev.payouts,
         ownerInvestments: oi !== null ? oi : prev.ownerInvestments,
         shipments: ship !== null ? ship : prev.shipments,
+        buyerPayments: bp !== null ? bp : prev.buyerPayments,
         activity: act !== null ? act : prev.activity,
         settings: (set !== null && set.businessName) ? set : prev.settings
       }));
@@ -241,6 +245,10 @@ export const DataProvider = ({ children }) => {
   const updateCashflow = (id, obj) => updateItem('cashflow', id, obj);
   const deleteCashflow = (id) => deleteItem('cashflow', id);
 
+  const addBuyerPayment = (obj) => addItem('buyerPayments', obj);
+  const updateBuyerPayment = (id, obj) => updateItem('buyerPayments', id, obj);
+  const deleteBuyerPayment = (id) => deleteItem('buyerPayments', id);
+
   const updateSettings = async (obj) => {
     try {
       const updated = await request('/api/settings', { method: 'PUT', body: JSON.stringify(obj) });
@@ -272,7 +280,7 @@ export const DataProvider = ({ children }) => {
       setData(prev => ({
         ...prev,
         inventory: [], sales: [], expenses: [], cashflow: [],
-        activity: [], payouts: [], ownerInvestments: [], shipments: [], hawala: []
+        activity: [], payouts: [], ownerInvestments: [], shipments: [], hawala: [], buyerPayments: []
       }));
       showToast('All business data has been wiped from server.', 'danger');
     } catch (err) {
@@ -303,6 +311,7 @@ export const DataProvider = ({ children }) => {
     addShipment, updateShipment, deleteShipment,
     addOwnerInvestment, updateOwnerInvestment, deleteOwnerInvestment,
     addCashflow, updateCashflow, deleteCashflow,
+    addBuyerPayment, updateBuyerPayment, deleteBuyerPayment,
     updateSettings, restoreData, logActivity, clearActivity, wipeAllData,
     showToast, showConfirm
   };

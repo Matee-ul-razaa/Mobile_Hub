@@ -16,6 +16,7 @@ import ActivityLog from './pages/ActivityLog';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Capital from './pages/CapitalProfit';
+import BuyerPayments from './pages/BuyerPayments';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -111,6 +112,9 @@ function App() {
           <NavLink to="/fazi-cash" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <span className="icon">🔁</span> Fazi Cash
           </NavLink>
+          <NavLink to="/buyer-payments" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">💰</span> Buyer Payments
+          </NavLink>
           <NavLink to="/investors" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <span className="icon">👥</span> Investors
           </NavLink>
@@ -165,6 +169,7 @@ function App() {
           <Route path="/owner-investment" element={<MyInvestment toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/payouts" element={<Payouts toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/shipments" element={<Shipments toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/buyer-payments" element={<BuyerPayments toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/ai-assistant" element={<AIAssistant toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/activity-log" element={<ActivityLog toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/settings" element={<Settings toggleMenu={toggleMenu} onLogout={handleLogout} />} />
