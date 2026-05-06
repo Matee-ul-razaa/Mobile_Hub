@@ -348,7 +348,38 @@ crudRoutes('/owner-investment', OwnerInvestment, { validate: (b) => !b.date ? 'D
 crudRoutes('/shipments', Shipment, { validate: (b) => !(b.date || b.sentDate) ? 'Shipment date is required' : null });
 crudRoutes('/buyer-payments', BuyerPayment, { validate: (b) => !b.date ? 'Date is required' : !b.buyer ? 'Buyer name is required' : validateAmount(b) });
 
-// Hawala / Fazi Cash routes
+// Hawala / Fazi Cash routes with Buyer Payment synchronization
+async function syncHawalaToPayment(hawala, action = 'create') {
+  try {
+    if (action === 'create') {
+      await BuyerPayment.create({
+        date: hawala.date,
+        buyer: hawala.buyer,
+        amount: hawala.amountKRW,
+        method: 'Fazi Cash',
+        reference: `Fazi Cash Ref: ${hawala.receiverName || '—'}`,
+        notes: `Auto-synced from Fazi Cash. Receiver: ${hawala.cashReceiver || '—'}`,
+        linkedHawalaId: hawala._id
+      });
+    } else if (action === 'update') {
+      await BuyerPayment.findOneAndUpdate(
+        { linkedHawalaId: hawala._id },
+        {
+          date: hawala.date,
+          buyer: hawala.buyer,
+          amount: hawala.amountKRW,
+          reference: `Fazi Cash Ref: ${hawala.receiverName || '—'}`,
+          notes: `Auto-synced from Fazi Cash. Receiver: ${hawala.cashReceiver || '—'}`
+        }
+      );
+    } else if (action === 'delete') {
+      await BuyerPayment.findOneAndDelete({ linkedHawalaId: hawala._id });
+    }
+  } catch (err) {
+    console.error('[Sync Hawala Error]', err);
+  }
+}
+
 router.get('/hawala', async (_req, res) => {
   try { res.json(await Hawala.find().sort({ date: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -359,6 +390,7 @@ router.post('/hawala', async (req, res) => {
     if (!nonNegative(req.body.amountPKR || 0)) return res.status(400).json({ error: 'Amount PKR cannot be negative' });
     if (!String(req.body.buyer || '').trim()) return res.status(400).json({ error: 'Buyer is required' });
     const hawala = await Hawala.create(req.body);
+    await syncHawalaToPayment(hawala, 'create');
     await writeActivity(req, 'create', 'hawala', hawala.buyer, hawala.amountKRW);
     res.status(201).json(hawala);
   } catch (err) { res.status(400).json({ error: err.message }); }
@@ -366,6 +398,7 @@ router.post('/hawala', async (req, res) => {
 router.put('/hawala/:id', async (req, res) => {
   try {
     const updated = await Hawala.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    await syncHawalaToPayment(updated, 'update');
     await writeActivity(req, 'update', 'hawala', updated.buyer, updated.amountKRW);
     res.json(updated);
   } catch (err) { res.status(400).json({ error: err.message }); }
@@ -374,6 +407,7 @@ router.delete('/hawala/:id', async (req, res) => {
   try {
     const hawala = await Hawala.findById(req.params.id);
     if (!hawala) return res.status(404).json({ error: 'Hawala record not found' });
+    await syncHawalaToPayment(hawala, 'delete');
     await Hawala.findByIdAndDelete(req.params.id);
     await writeActivity(req, 'delete', 'hawala', hawala.buyer, hawala.amountKRW);
     res.json({ message: 'Deleted' });

@@ -9,6 +9,7 @@ const hawalaSchema = new mongoose.Schema({
   receiverName: { type: String, default: '' },
   receiverPhone: { type: String, default: '' },
   receivedBy: { type: String, default: '' },
+  cashReceiver: { type: String, default: '' },
   note: { type: String, default: '' }
 }, { timestamps: true });
 

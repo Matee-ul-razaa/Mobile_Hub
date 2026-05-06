@@ -7,7 +7,8 @@ const buyerPaymentSchema = new mongoose.Schema({
   method: { type: String, default: 'Cash' },
   reference: { type: String, default: '' },
   notes: { type: String, default: '' },
-  createdBy: { type: String, default: '' }
+  createdBy: { type: String, default: '' },
+  linkedHawalaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hawala' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('BuyerPayment', buyerPaymentSchema);

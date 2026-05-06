@@ -67,6 +67,7 @@ const Hawala = ({ toggleMenu, onLogout }) => {
                 <th className="num">PKR Amount</th>
                 <th className="num">KRW Received</th>
                 <th className="num">Discount</th>
+                <th>Receiver (KR)</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -79,6 +80,7 @@ const Hawala = ({ toggleMenu, onLogout }) => {
                   <td className="num">₨{fmtNum(h.amountPKR)}</td>
                   <td className="num pos"><strong>{fmtKRW(h.amountKRW)}</strong></td>
                   <td className="num neg">{h.discountKRW ? fmtKRW(h.discountKRW) : '—'}</td>
+                  <td>{h.cashReceiver || '—'}</td>
                   <td>
                     <div className="inline-actions">
                       <button className="btn btn-sm" onClick={() => { setEditingItem(h); setShowModal(true); }}>Edit</button>
@@ -116,6 +118,7 @@ const HawalaModal = ({ item, sales, onClose, onSave }) => {
     amountKRW: 0, 
     discountKRW: 0, 
     receiverName: '', 
+    cashReceiver: '',
     note: '' 
   });
 
@@ -130,6 +133,7 @@ const HawalaModal = ({ item, sales, onClose, onSave }) => {
           <div className="form-row"><label>KRW Received *</label><input type="number" value={form.amountKRW} onChange={e=>setForm({...form, amountKRW:Number(e.target.value)})} /></div>
         </div>
         <div className="form-row"><label>Discount Given (KRW)</label><input type="number" value={form.discountKRW} onChange={e=>setForm({...form, discountKRW:Number(e.target.value)})} /></div>
+        <div className="form-row"><label>Cash Receiver (Who took the money?)</label><input value={form.cashReceiver} onChange={e=>setForm({...form, cashReceiver:e.target.value})} placeholder="e.g. Nadeem, Shop, etc." /></div>
         <div className="form-row"><label>Note</label><textarea value={form.note} onChange={e=>setForm({...form, note:e.target.value})} /></div>
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>Cancel</button>
