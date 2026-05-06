@@ -7,14 +7,29 @@ const BuyerPayments = ({ toggleMenu, onLogout }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [search, setSearch] = useState('');
+  const [fromDate, setFromDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10));
+  const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
 
   const payments = data.buyerPayments || [];
-  const filtered = payments.filter(p => 
+  
+  // Filter by date AND search
+  const dateFiltered = payments.filter(p => {
+    const d = p.date || '';
+    return d >= fromDate && d <= toDate;
+  });
+
+  const filtered = dateFiltered.filter(p => 
     p.buyer.toLowerCase().includes(search.toLowerCase()) || 
     p.reference.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalReceived = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const totalReceived = dateFiltered.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  // Group by buyer for the "who gave how much" report
+  const buyerSummary = dateFiltered.reduce((acc, p) => {
+    acc[p.buyer] = (acc[p.buyer] || 0) + (p.amount || 0);
+    return acc;
+  }, {});
 
   return (
     <div>
@@ -26,7 +41,13 @@ const BuyerPayments = ({ toggleMenu, onLogout }) => {
             <div className="page-sub">Independent tracking of buyer payments</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--surface-2)', padding: '4px 10px', borderRadius: '8px', fontSize: '12px' }}>
+             <span className="muted">From:</span>
+             <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-1)', fontSize: '12px' }} />
+             <span className="muted">To:</span>
+             <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-1)', fontSize: '12px' }} />
+          </div>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }}>+ Record Payment</button>
           <button className="btn btn-danger" onClick={onLogout}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
@@ -41,16 +62,17 @@ const BuyerPayments = ({ toggleMenu, onLogout }) => {
 
       <div className="kpi-grid">
         <div className="kpi">
-          <div className="kpi-label">TOTAL PAYMENTS</div>
-          <div className="kpi-value">{payments.length}</div>
+          <div className="kpi-label">PERIOD PAYMENTS</div>
+          <div className="kpi-value">{dateFiltered.length}</div>
+          <div className="kpi-sub">Records in selected range</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">TOTAL CASH RECEIVED</div>
+          <div className="kpi-label">TOTAL RECEIVED</div>
           <div className="kpi-value pos">{fmtKRW(totalReceived)}</div>
-          <div className="kpi-sub">Total amount from all recorded buyers</div>
+          <div className="kpi-sub">Total for selected period</div>
         </div>
         <div className="kpi" style={{ flex: 2 }}>
-           <div className="kpi-label">SEARCH BUYERS</div>
+           <div className="kpi-label">SEARCH RESULTS</div>
            <input 
             type="text" 
             placeholder="Search by buyer name or reference..." 
@@ -59,6 +81,34 @@ const BuyerPayments = ({ toggleMenu, onLogout }) => {
             onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', marginTop: '8px' }}
            />
+        </div>
+      </div>
+
+      <div className="chart-grid">
+        <div className="card" style={{ marginBottom: 0 }}>
+          <div className="card-header"><h3 className="card-title">Buyer Summary (Period Report)</h3></div>
+          <div className="table-wrap" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Buyer Name</th>
+                  <th className="num">Total Contributed (KRW)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(buyerSummary).length === 0 ? (
+                  <tr><td colSpan="2" className="muted" style={{ textAlign: 'center', padding: '10px' }}>No data for this range</td></tr>
+                ) : (
+                  Object.entries(buyerSummary).sort((a,b) => b[1] - a[1]).map(([name, total]) => (
+                    <tr key={name}>
+                      <td>{name}</td>
+                      <td className="num pos"><strong>{fmtKRW(total)}</strong></td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
