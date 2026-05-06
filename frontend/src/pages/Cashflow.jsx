@@ -186,8 +186,14 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
   // Sort by date descending
   allMovements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-  const totalIn = allMovements.filter(m => m.type === 'in').reduce((s, m) => s + m.amount, 0);
-  const totalOut = allMovements.filter(m => m.type === 'out').reduce((s, m) => s + m.amount, 0);
+  // Filter display by date range
+  const displayMovements = allMovements.filter(m => {
+    const d = m.date || '';
+    return d >= fromDate && d <= toDate;
+  });
+
+  const totalIn = displayMovements.filter(m => m.type === 'in').reduce((s, m) => s + m.amount, 0);
+  const totalOut = displayMovements.filter(m => m.type === 'out').reduce((s, m) => s + m.amount, 0);
   const net = totalIn - totalOut;
 
   const originColor = (origin) => {
@@ -245,12 +251,12 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
         <div className="kpi">
           <div className="kpi-label">TOTAL CASH IN</div>
           <div className="kpi-value pos">{fmtKRW(totalIn)}</div>
-          <div className="kpi-sub">{allMovements.filter(m => m.type === 'in').length} inflow entries</div>
+          <div className="kpi-sub">{displayMovements.filter(m => m.type === 'in').length} inflow entries</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">TOTAL CASH OUT</div>
           <div className="kpi-value neg">{fmtKRW(totalOut)}</div>
-          <div className="kpi-sub">{allMovements.filter(m => m.type === 'out').length} outflow entries</div>
+          <div className="kpi-sub">{displayMovements.filter(m => m.type === 'out').length} outflow entries</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">NET</div>
@@ -261,7 +267,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">All Cash Movement</h3>
-          <div className="muted" style={{ fontSize: '11px' }}>{allMovements.length} total entries from all sources</div>
+          <div className="muted" style={{ fontSize: '11px' }}>{displayMovements.length} filtered entries</div>
         </div>
         <div className="table-wrap">
           <table>
@@ -277,7 +283,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
               </tr>
             </thead>
             <tbody>
-              {allMovements.map(c => (
+              {displayMovements.map(c => (
                 <tr key={c._id}>
                   <td>{c.date}</td>
                   <td>
@@ -306,7 +312,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
                   </td>
                 </tr>
               ))}
-              {allMovements.length === 0 && <tr><td colSpan="7" className="empty">No cash movements yet</td></tr>}
+              {displayMovements.length === 0 && <tr><td colSpan="7" className="empty">No cash movements for this period</td></tr>}
             </tbody>
           </table>
         </div>
