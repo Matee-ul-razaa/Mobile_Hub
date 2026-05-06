@@ -116,8 +116,7 @@ const HawalaModal = ({ item, sales, onClose, onSave }) => {
     amountKRW: 0, 
     discountKRW: 0, 
     receiverName: '', 
-    note: '', 
-    linkedSaleId: '' 
+    note: '' 
   });
 
   return (
@@ -126,15 +125,6 @@ const HawalaModal = ({ item, sales, onClose, onSave }) => {
         <div className="card-header"><h3 className="card-title">{item ? 'Edit' : 'Record'} Fazi Cash</h3></div>
         <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
         <div className="form-row"><label>Buyer (Pakistan) *</label><input value={form.buyer} onChange={e=>setForm({...form, buyer:e.target.value})} /></div>
-        <div className="form-row">
-          <label>Link to Sale (marks as received)</label>
-          <select value={form.linkedSaleId} onChange={e=>setForm({...form, linkedSaleId:e.target.value})}>
-            <option value="">— none —</option>
-            {sales.filter(s => (s.qty*s.pricePerUnit) > (s.received||0)).map(s => (
-              <option key={s._id} value={s._id}>{s.date} · {s.buyer} · {fmtKRW(s.qty*s.pricePerUnit)}</option>
-            ))}
-          </select>
-        </div>
         <div className="form-row-2">
           <div className="form-row"><label>PKR Amount</label><input type="number" value={form.amountPKR} onChange={e=>setForm({...form, amountPKR:Number(e.target.value)})} /></div>
           <div className="form-row"><label>KRW Received *</label><input type="number" value={form.amountKRW} onChange={e=>setForm({...form, amountKRW:Number(e.target.value)})} /></div>

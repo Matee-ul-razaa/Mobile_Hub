@@ -346,11 +346,7 @@ crudRoutes('/payouts', Payout, { validate: (b) => !b.investorId ? 'Investor is r
 crudRoutes('/owner-investment', OwnerInvestment, { validate: (b) => !b.date ? 'Date is required' : validateAmount(b, 'amountKRW') });
 crudRoutes('/shipments', Shipment, { validate: (b) => !(b.date || b.sentDate) ? 'Shipment date is required' : null });
 
-// Hawala / Fazi Cash with linked sale synchronization.
-async function applyHawalaToSale(hawala, sign = 1) {
-  if (!hawala?.linkedSaleId) return;
-  await Sale.findByIdAndUpdate(hawala.linkedSaleId, { $inc: { received: sign * numberValue(hawala.amountKRW) } }, { new: true });
-}
+// Hawala / Fazi Cash routes
 router.get('/hawala', async (_req, res) => {
   try { res.json(await Hawala.find().sort({ date: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -361,18 +357,13 @@ router.post('/hawala', async (req, res) => {
     if (!nonNegative(req.body.amountPKR || 0)) return res.status(400).json({ error: 'Amount PKR cannot be negative' });
     if (!String(req.body.buyer || '').trim()) return res.status(400).json({ error: 'Buyer is required' });
     const hawala = await Hawala.create(req.body);
-    await applyHawalaToSale(hawala, 1);
     await writeActivity(req, 'create', 'hawala', hawala.buyer, hawala.amountKRW);
     res.status(201).json(hawala);
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 router.put('/hawala/:id', async (req, res) => {
   try {
-    const oldHawala = await Hawala.findById(req.params.id);
-    if (!oldHawala) return res.status(404).json({ error: 'Hawala record not found' });
-    await applyHawalaToSale(oldHawala, -1);
     const updated = await Hawala.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    await applyHawalaToSale(updated, 1);
     await writeActivity(req, 'update', 'hawala', updated.buyer, updated.amountKRW);
     res.json(updated);
   } catch (err) { res.status(400).json({ error: err.message }); }
@@ -381,7 +372,6 @@ router.delete('/hawala/:id', async (req, res) => {
   try {
     const hawala = await Hawala.findById(req.params.id);
     if (!hawala) return res.status(404).json({ error: 'Hawala record not found' });
-    await applyHawalaToSale(hawala, -1);
     await Hawala.findByIdAndDelete(req.params.id);
     await writeActivity(req, 'delete', 'hawala', hawala.buyer, hawala.amountKRW);
     res.json({ message: 'Deleted' });

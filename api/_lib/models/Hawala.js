@@ -9,8 +9,7 @@ const hawalaSchema = new mongoose.Schema({
   receiverName: { type: String, default: '' },
   receiverPhone: { type: String, default: '' },
   receivedBy: { type: String, default: '' },
-  note: { type: String, default: '' },
-  linkedSaleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Sale' }
+  note: { type: String, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Hawala', hawalaSchema);
