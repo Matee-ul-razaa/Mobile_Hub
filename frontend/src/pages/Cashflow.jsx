@@ -6,28 +6,49 @@ import * as XLSX from 'xlsx';
 const Cashflow = ({ toggleMenu, onLogout }) => {
   const { data, addCashflow, deleteCashflow } = useData();
   const [showModal, setShowModal] = useState(false);
+  const [fromDate, setFromDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10));
+  const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
 
   const handleDownloadStatement = () => {
-    const reportData = allMovements.map(m => ({
+    // Filter movements by date range
+    const filteredMovements = allMovements.filter(m => {
+      const d = m.date || '';
+      return d >= fromDate && d <= toDate;
+    });
+
+    const reportData = filteredMovements.map(m => ({
       'Date': m.date,
       'Type': m.type === 'in' ? 'DEPOSIT' : 'WITHDRAWAL',
       'Source / Detail': m.source,
       'Category (Origin)': m.origin,
       'Note': m.note,
       'Amount (KRW)': m.amount,
-      'Balance (KRW)': 0 // We'll calculate this below
+      'Balance (KRW)': 0 
     }));
 
-    // Calculate running balance (from oldest to newest)
+    // Calculate running balance based on ALL history before 'toDate' to get accurate starting balance
     let balance = 0;
-    const sortedOldToNew = [...reportData].reverse();
-    sortedOldToNew.forEach(row => {
-      if (row.Type === 'DEPOSIT') balance += row['Amount (KRW)'];
-      else balance -= row['Amount (KRW)'];
-      row['Balance (KRW)'] = balance;
+    const allHistoryOldToNew = [...allMovements].reverse();
+    const rowsOldToNew = [];
+
+    allHistoryOldToNew.forEach(m => {
+      if (m.type === 'in') balance += m.amount;
+      else balance -= m.amount;
+
+      if (m.date >= fromDate && m.date <= toDate) {
+        rowsOldToNew.push({
+          'Date': m.date,
+          'Type': m.type === 'in' ? 'DEPOSIT' : 'WITHDRAWAL',
+          'Source / Detail': m.source,
+          'Category (Origin)': m.origin,
+          'Note': m.note,
+          'Amount (KRW)': m.amount,
+          'Balance (KRW)': balance
+        });
+      }
     });
 
-    const ws = XLSX.utils.json_to_sheet(sortedOldToNew.reverse());
+    const ws = XLSX.utils.json_to_sheet(rowsOldToNew.reverse());
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Statement");
     
@@ -37,7 +58,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
     ];
     ws['!cols'] = wscols;
 
-    XLSX.writeFile(wb, `MobileHub_Statement_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `MobileHub_Statement_${fromDate}_to_${toDate}.xlsx`);
   };
 
   // Build a unified list of ALL cash movements
@@ -193,14 +214,20 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
             <div className="page-sub">Complete money movement record</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--surface-2)', padding: '4px 10px', borderRadius: '8px', fontSize: '12px' }}>
+             <span className="muted">From:</span>
+             <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-1)', fontSize: '12px' }} />
+             <span className="muted">To:</span>
+             <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-1)', fontSize: '12px' }} />
+          </div>
           <button className="btn" onClick={handleDownloadStatement} style={{ borderColor: 'var(--brand)', color: 'var(--brand)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Download Statement
+            Statement
           </button>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Entry</button>
           <button className="btn btn-danger" onClick={onLogout}>
