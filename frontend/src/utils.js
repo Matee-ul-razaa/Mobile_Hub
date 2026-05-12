@@ -66,8 +66,8 @@ export const agg = (data) => {
   // Total cost of ALL phones ever purchased (cash that left your hand)
   const invTotalCost = inventory.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
 
-  // CASH IN = all sources of money arriving (Investor/Owner capital arrives via Fazi Cash, so don't double count)
-  const totalCashIn = hawalaIn + manualCashIn;
+  // CASH IN = all sources of money arriving
+  const totalCashIn = ownerCapital + totalCapital + hawalaIn + manualCashIn;
   // CASH OUT = all sources of money leaving
   const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaDiscount + manualCashOut;
   const cashInHand = totalCashIn - totalCashOut;
