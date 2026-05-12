@@ -185,22 +185,6 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
     }
   });
 
-  // 9. Direct Buyer Payments (Not synced from Hawala) — always Cash In
-  (data.buyerPayments || []).forEach(p => {
-    if (!p.linkedHawalaId) {
-      allMovements.push({
-        _id: `bp-${p._id}`,
-        date: p.date,
-        type: 'in',
-        source: `Buyer Payment: ${p.buyer}`,
-        origin: 'Buyer Payment',
-        note: p.notes || '',
-        amount: Number(p.amount) || 0,
-        deletable: false,
-      });
-    }
-  });
-
   // Sort by date descending
   allMovements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
@@ -224,7 +208,6 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
       case 'Investor': return '#6d28d9';
       case 'Inventory': return '#0f766e';
       case 'Discount': return '#db2777';
-      case 'Buyer Payment': return '#0ea5e9';
       default: return 'var(--surface-2)';
     }
   };
