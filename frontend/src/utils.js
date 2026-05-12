@@ -17,6 +17,7 @@ export const agg = (data) => {
   const payouts = data.payouts || [];
   const ownerInvestments = data.ownerInvestments || [];
   const cashflow = data.cashflow || [];
+  const buyerPayments = data.buyerPayments || [];
 
   // Per-unit inventory: each item is one phone
   const inStock = inventory.filter(x => x.status === 'In Stock');
@@ -65,8 +66,11 @@ export const agg = (data) => {
   // Total cost of ALL phones ever purchased (cash that left your hand)
   const invTotalCost = inventory.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
 
+  // Direct buyer payments (not synced from Hawala)
+  const directBuyerPaymentsIn = buyerPayments.filter(p => !p.linkedHawalaId).reduce((a,x) => a + (Number(x.amount) || 0), 0);
+
   // CASH IN = all sources of money arriving
-  const totalCashIn = ownerCapital + totalCapital + hawalaIn + manualCashIn;
+  const totalCashIn = ownerCapital + totalCapital + hawalaIn + manualCashIn + directBuyerPaymentsIn;
   // CASH OUT = all sources of money leaving
   const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaDiscount + manualCashOut;
   const cashInHand = totalCashIn - totalCashOut;

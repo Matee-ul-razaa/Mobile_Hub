@@ -80,16 +80,18 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
 
   // 2. Fazi Cash (Hawala) — always Cash In
   (data.hawala || []).forEach(h => {
-    allMovements.push({
-      _id: `hawala-${h._id}`,
-      date: h.date,
-      type: 'in',
-      source: `${h.buyer} → Fazi Cash`,
-      origin: 'Fazi Cash',
-      note: h.note || '',
-      amount: h.amountKRW || 0,
-      deletable: false,
-    });
+    if (h.status !== 'Unreceived') {
+      allMovements.push({
+        _id: `hawala-${h._id}`,
+        date: h.date,
+        type: 'in',
+        source: `${h.buyer} → Fazi Cash`,
+        origin: 'Fazi Cash',
+        note: h.note || '',
+        amount: h.amountKRW || 0,
+        deletable: false,
+      });
+    }
   });
 
   // 3. Expenses — always Cash Out
@@ -169,7 +171,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
 
   // 8. Hawala Discounts — always Cash Out
   (data.hawala || []).forEach(h => {
-    if (Number(h.discountKRW) > 0) {
+    if (Number(h.discountKRW) > 0 && h.status !== 'Unreceived') {
       allMovements.push({
         _id: `hawala-disc-${h._id}`,
         date: h.date,
@@ -178,6 +180,22 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
         origin: 'Discount',
         note: h.note || '',
         amount: Number(h.discountKRW) || 0,
+        deletable: false,
+      });
+    }
+  });
+
+  // 9. Direct Buyer Payments (Not synced from Hawala) — always Cash In
+  (data.buyerPayments || []).forEach(p => {
+    if (!p.linkedHawalaId) {
+      allMovements.push({
+        _id: `bp-${p._id}`,
+        date: p.date,
+        type: 'in',
+        source: `Buyer Payment: ${p.buyer}`,
+        origin: 'Buyer Payment',
+        note: p.notes || '',
+        amount: Number(p.amount) || 0,
         deletable: false,
       });
     }
@@ -206,6 +224,7 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
       case 'Investor': return '#6d28d9';
       case 'Inventory': return '#0f766e';
       case 'Discount': return '#db2777';
+      case 'Buyer Payment': return '#0ea5e9';
       default: return 'var(--surface-2)';
     }
   };
