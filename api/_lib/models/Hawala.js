@@ -10,6 +10,7 @@ const hawalaSchema = new mongoose.Schema({
   receiverPhone: { type: String, default: '' },
   receivedBy: { type: String, default: '' },
   cashReceiver: { type: String, default: '' },
+  status: { type: String, default: 'Received', enum: ['Received', 'Unreceived'] },
   note: { type: String, default: '' }
 }, { timestamps: true });
 

@@ -47,6 +47,11 @@ const Hawala = ({ toggleMenu, onLogout }) => {
           <div className="kpi-label">Total Discount</div>
           <div className="kpi-value neg">{fmtKRW(a.hawalaDiscount)}</div>
         </div>
+        <div className="kpi" style={{ borderLeft: '4px solid var(--orange)' }}>
+          <div className="kpi-label">Pending Collect</div>
+          <div className="kpi-value" style={{ color: 'var(--orange)' }}>{fmtKRW(a.hawalaPending)}</div>
+          <div className="kpi-sub">Unreceived money</div>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: '14px' }}>
@@ -68,6 +73,7 @@ const Hawala = ({ toggleMenu, onLogout }) => {
                 <th className="num">KRW Received</th>
                 <th className="num">Discount</th>
                 <th>Receiver (KR)</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -81,6 +87,12 @@ const Hawala = ({ toggleMenu, onLogout }) => {
                   <td className="num pos"><strong>{fmtKRW(h.amountKRW)}</strong></td>
                   <td className="num neg">{h.discountKRW ? fmtKRW(h.discountKRW) : '—'}</td>
                   <td>{h.cashReceiver || '—'}</td>
+                  <td>
+                    {h.status === 'Unreceived' ? 
+                      <span style={{ color: 'var(--orange)', fontSize: '12px', fontWeight: 'bold' }}>Pending</span> : 
+                      <span className="muted" style={{ fontSize: '12px' }}>Received</span>
+                    }
+                  </td>
                   <td>
                     <div className="inline-actions">
                       <button className="btn btn-sm" onClick={() => { setEditingItem(h); setShowModal(true); }}>Edit</button>
@@ -119,6 +131,7 @@ const HawalaModal = ({ item, sales, onClose, onSave }) => {
     discountKRW: 0, 
     receiverName: '', 
     cashReceiver: '',
+    status: 'Received',
     note: '' 
   });
 
@@ -133,7 +146,16 @@ const HawalaModal = ({ item, sales, onClose, onSave }) => {
           <div className="form-row"><label>KRW Received *</label><input type="number" value={form.amountKRW} onChange={e=>setForm({...form, amountKRW:Number(e.target.value)})} /></div>
         </div>
         <div className="form-row"><label>Discount Given (KRW)</label><input type="number" value={form.discountKRW} onChange={e=>setForm({...form, discountKRW:Number(e.target.value)})} /></div>
-        <div className="form-row"><label>Cash Receiver (Who took the money?)</label><input value={form.cashReceiver} onChange={e=>setForm({...form, cashReceiver:e.target.value})} placeholder="e.g. Nadeem, Shop, etc." /></div>
+        <div className="form-row-2">
+          <div className="form-row"><label>Cash Receiver (Who took the money?)</label><input value={form.cashReceiver} onChange={e=>setForm({...form, cashReceiver:e.target.value})} placeholder="e.g. Nadeem, Shop" /></div>
+          <div className="form-row">
+            <label>Status</label>
+            <select value={form.status} onChange={e=>setForm({...form, status:e.target.value})}>
+              <option value="Received">Received</option>
+              <option value="Unreceived">Unreceived (Pending)</option>
+            </select>
+          </div>
+        </div>
         <div className="form-row"><label>Note</label><textarea value={form.note} onChange={e=>setForm({...form, note:e.target.value})} /></div>
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>Cancel</button>

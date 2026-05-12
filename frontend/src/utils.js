@@ -46,9 +46,11 @@ export const agg = (data) => {
   
   const manualCashIn = cashflow.filter(c=>c.type==='in').reduce((a,x)=>a+x.amount,0);
   const manualCashOut = cashflow.filter(c=>c.type==='out').reduce((a,x)=>a+x.amount,0);
-  const hawalaIn = hawala.reduce((a,x)=>a+(+x.amountKRW||0),0);
-  const hawalaPKR = hawala.reduce((a,x)=>a+(+x.amountPKR||0),0);
-  const hawalaDiscount = hawala.reduce((a,x)=>a+(+x.discountKRW||0),0);
+  const receivedHawala = hawala.filter(h => h.status !== 'Unreceived');
+  const hawalaIn = receivedHawala.reduce((a,x)=>a+(+x.amountKRW||0),0);
+  const hawalaPKR = receivedHawala.reduce((a,x)=>a+(+x.amountPKR||0),0);
+  const hawalaDiscount = receivedHawala.reduce((a,x)=>a+(+x.discountKRW||0),0);
+  const hawalaPending = hawala.filter(h => h.status === 'Unreceived').reduce((a,x)=>a+(+x.amountKRW||0),0);
   const pendingReceivable = sales.reduce((a,x)=> a + Math.max(0, (x.qty*x.pricePerUnit) - (x.received||0)), 0);
   
   const totalCapital = investors.reduce((a,x)=>a+(+x.capital||0),0);
@@ -94,7 +96,7 @@ export const agg = (data) => {
 
   return {
     invValue, invUnits, salesRev, salesUnits, salesCOGS, grossProfit, totalExp, netProfit,
-    hawalaIn, hawalaPKR, hawalaDiscount, pendingReceivable,
+    hawalaIn, hawalaPKR, hawalaDiscount, hawalaPending, pendingReceivable,
     totalCapital, totalCapitalPKR, ownerCapital, ownerCapitalPKR,
     totalMonthly, totalMonthlyPKR, totalPaid, totalPaidPKR,
     totalCashIn, totalCashOut, cashInHand, realizedRevenue, realizedGrossProfit, retainedProfit, totalCapitalPool

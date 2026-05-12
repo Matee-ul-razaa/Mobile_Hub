@@ -356,9 +356,9 @@ async function syncHawalaToPayment(hawala, action = 'create') {
         date: hawala.date,
         buyer: hawala.buyer,
         amount: hawala.amountKRW,
-        method: 'Fazi Cash',
+        method: hawala.status === 'Unreceived' ? 'Fazi Cash (Pending)' : 'Fazi Cash',
         reference: `Fazi Cash Ref: ${hawala.receiverName || '—'}`,
-        notes: `Auto-synced from Fazi Cash. Receiver: ${hawala.cashReceiver || '—'}`,
+        notes: `Auto-synced from Fazi Cash. Receiver: ${hawala.cashReceiver || '—'}. Status: ${hawala.status || 'Received'}`,
         linkedHawalaId: hawala._id
       });
     } else if (action === 'update') {
@@ -368,8 +368,9 @@ async function syncHawalaToPayment(hawala, action = 'create') {
           date: hawala.date,
           buyer: hawala.buyer,
           amount: hawala.amountKRW,
+          method: hawala.status === 'Unreceived' ? 'Fazi Cash (Pending)' : 'Fazi Cash',
           reference: `Fazi Cash Ref: ${hawala.receiverName || '—'}`,
-          notes: `Auto-synced from Fazi Cash. Receiver: ${hawala.cashReceiver || '—'}`
+          notes: `Auto-synced from Fazi Cash. Receiver: ${hawala.cashReceiver || '—'}. Status: ${hawala.status || 'Received'}`
         }
       );
     } else if (action === 'delete') {
