@@ -345,7 +345,8 @@ crudRoutes('/investors', Investor, {
 });
 crudRoutes('/payouts', Payout, { validate: (b) => !b.investorId ? 'Investor is required' : !b.date ? 'Date is required' : validateAmount(b) });
 crudRoutes('/owner-investment', OwnerInvestment, { validate: (b) => !b.date ? 'Date is required' : validateAmount(b, 'amountKRW') });
-crudRoutes('/shipments', Shipment, { validate: (b) => !(b.date || b.sentDate) ? 'Shipment date is required' : null });
+// Shipments routes handled below with Expense synchronization
+
 crudRoutes('/buyer-payments', BuyerPayment, { validate: (b) => !b.date ? 'Date is required' : !b.buyer ? 'Buyer name is required' : validateAmount(b) });
 
 // Hawala / Fazi Cash routes with Buyer Payment synchronization
@@ -411,6 +412,68 @@ router.delete('/hawala/:id', async (req, res) => {
     await syncHawalaToPayment(hawala, 'delete');
     await Hawala.findByIdAndDelete(req.params.id);
     await writeActivity(req, 'delete', 'hawala', hawala.buyer, hawala.amountKRW);
+    res.json({ message: 'Deleted' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Shipment routes with Expense synchronization
+async function syncShipmentToExpense(shipment, action = 'create') {
+  try {
+    const cost = numberValue(shipment.shippingCost);
+    if (action === 'delete' || cost <= 0) {
+      await Expense.findOneAndDelete({ linkedShipmentId: shipment._id });
+    }
+    
+    if (cost > 0 && action !== 'delete') {
+      const expenseData = {
+        date: shipment.sentDate || shipment.date || new Date().toISOString().slice(0, 10),
+        category: 'Shipping',
+        amount: cost,
+        note: `Auto-synced from Shipment #${shipment.id || ''} via ${shipment.courier || 'Courier'}. Dest: ${shipment.destination || 'N/A'}`,
+        linkedShipmentId: shipment._id
+      };
+      
+      const existing = await Expense.findOne({ linkedShipmentId: shipment._id });
+      if (existing) {
+        await Expense.findByIdAndUpdate(existing._id, expenseData);
+      } else {
+        await Expense.create(expenseData);
+      }
+    }
+  } catch (err) {
+    console.error('[Sync Shipment Error]', err);
+  }
+}
+
+router.get('/shipments', async (_req, res) => {
+  try { res.json(await Shipment.find().sort({ createdAt: -1 })); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+router.post('/shipments', async (req, res) => {
+  try {
+    if (!(req.body.date || req.body.sentDate)) return res.status(400).json({ error: 'Shipment date is required' });
+    const shipment = await Shipment.create(req.body);
+    await syncShipmentToExpense(shipment, 'create');
+    await writeActivity(req, 'create', 'shipments', `Shipment #${shipment.id} to ${shipment.destination}`);
+    res.status(201).json(shipment);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+router.put('/shipments/:id', async (req, res) => {
+  try {
+    if (!(req.body.date || req.body.sentDate)) return res.status(400).json({ error: 'Shipment date is required' });
+    const updated = await Shipment.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!updated) return res.status(404).json({ error: 'Record not found' });
+    await syncShipmentToExpense(updated, 'update');
+    await writeActivity(req, 'update', 'shipments', `Shipment #${updated.id} to ${updated.destination}`);
+    res.json(updated);
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+router.delete('/shipments/:id', async (req, res) => {
+  try {
+    const shipment = await Shipment.findById(req.params.id);
+    if (!shipment) return res.status(404).json({ error: 'Record not found' });
+    await syncShipmentToExpense(shipment, 'delete');
+    await Shipment.findByIdAndDelete(req.params.id);
+    await writeActivity(req, 'delete', 'shipments', `Shipment #${shipment.id}`);
     res.json({ message: 'Deleted' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

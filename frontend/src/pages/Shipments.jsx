@@ -48,8 +48,8 @@ const Shipments = ({ toggleMenu, onLogout }) => {
         </div>
         <div className="kpi">
           <div className="kpi-label">TOTAL SHIPPING COST</div>
-          <div className="kpi-value neg">₩0</div>
-          <div className="kpi-sub">Logged as expenses</div>
+          <div className="kpi-value neg">{fmtKRW(data.shipments.reduce((sum, s) => sum + (Number(s.shippingCost) || 0), 0))}</div>
+          <div className="kpi-sub">Auto-synced to expenses</div>
         </div>
       </div>
 
@@ -77,6 +77,12 @@ const Shipments = ({ toggleMenu, onLogout }) => {
                     <span className="muted">Target:</span>
                     <strong>{s.destination || 'Pakistan'}</strong>
                   </div>
+                  {(s.shippingCost > 0 || s.notes) && (
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                      {s.shippingCost > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}><span className="muted">Cost:</span><strong className="neg">{fmtKRW(s.shippingCost)}</strong></div>}
+                      {s.notes && <div style={{ color: 'var(--text-3)' }}>{s.notes}</div>}
+                    </div>
+                  )}
                 </div>
 
                 <div className="actions" style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
@@ -112,6 +118,7 @@ const ShipmentModal = ({ shipment, onClose, onSave }) => {
     status: 'Scheduled', 
     sentDate: new Date().toISOString().slice(0,10), 
     destination: 'Pakistan', 
+    shippingCost: 0,
     notes: '' 
   });
 
@@ -137,6 +144,8 @@ const ShipmentModal = ({ shipment, onClose, onSave }) => {
           <div className="form-row"><label>Sent Date</label><input type="date" value={form.sentDate} onChange={e=>setForm({...form, sentDate:e.target.value})} /></div>
           <div className="form-row"><label>Destination</label><input value={form.destination} onChange={e=>setForm({...form, destination:e.target.value})} /></div>
         </div>
+        <div className="form-row"><label>Shipping Cost (KRW)</label><input type="number" value={form.shippingCost} onChange={e=>setForm({...form, shippingCost:Number(e.target.value)})} /></div>
+        <div className="form-row"><label>Notes</label><textarea value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} placeholder="Contents, instructions, etc." /></div>
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>Cancel</button>
           <button className="btn btn-primary" onClick={() => onSave(form)}>Save Shipment</button>

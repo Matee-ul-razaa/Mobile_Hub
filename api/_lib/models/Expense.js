@@ -5,6 +5,7 @@ const expenseSchema = new mongoose.Schema({
   category: { type: String, required: true, trim: true },
   amount: { type: Number, required: true, min: 1 },
   note: { type: String, default: '' },
+  linkedShipmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shipment' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Expense', expenseSchema);
