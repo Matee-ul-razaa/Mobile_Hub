@@ -78,7 +78,7 @@ const Investors = ({ toggleMenu, onLogout }) => {
             <div key={inv._id} className="inv-card" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                 <h4 style={{ margin: 0, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  Investor {idx + 1} 
+                  {inv.name || `Investor ${idx + 1}`} 
                   <span style={{ background: 'var(--purple-soft)', color: 'var(--purple)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '600' }}>
                     {share}%
                   </span>
