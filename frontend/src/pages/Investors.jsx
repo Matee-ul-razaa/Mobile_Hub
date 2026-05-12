@@ -82,6 +82,9 @@ const Investors = ({ toggleMenu, onLogout }) => {
                   <span style={{ background: 'var(--purple-soft)', color: 'var(--purple)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '600' }}>
                     {share}%
                   </span>
+                  <span style={{ background: inv.type === 'Temporary' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: inv.type === 'Temporary' ? '#f59e0b' : '#10b981', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '600' }}>
+                    {inv.type || 'Permanent'}
+                  </span>
                 </h4>
               </div>
               <div className="muted" style={{ fontSize: '11px', marginBottom: '14px' }}>— · since {inv.startDate}</div>
@@ -154,6 +157,7 @@ const InvestorModal = ({ investor, onClose, onSave }) => {
     monthlyPayoutPKR: 0, 
     monthlyPayout: 0, 
     startDate: new Date().toISOString().slice(0,10), 
+    type: 'Permanent',
     notes: '' 
   });
 
@@ -161,7 +165,16 @@ const InvestorModal = ({ investor, onClose, onSave }) => {
     <div className="modal-overlay">
       <div className="modal">
         <div className="card-header"><h3 className="card-title">{investor ? 'Edit' : 'Add'} Investor</h3></div>
-        <div className="form-row"><label>Investment Name *</label><input value={form.name} onChange={e=>setForm({...form, name:e.target.value})} /></div>
+        <div className="form-row-2">
+          <div className="form-row"><label>Investment Name *</label><input value={form.name} onChange={e=>setForm({...form, name:e.target.value})} /></div>
+          <div className="form-row">
+            <label>Type</label>
+            <select value={form.type} onChange={e=>setForm({...form, type:e.target.value})}>
+              <option value="Permanent">Permanent</option>
+              <option value="Temporary">Temporary</option>
+            </select>
+          </div>
+        </div>
         <div className="form-row-2">
           <div className="form-row"><label>Capital (PKR)</label><input type="number" value={form.capitalPKR} onChange={e=>setForm({...form, capitalPKR:Number(e.target.value)})} /></div>
           <div className="form-row"><label>Capital (KRW) *</label><input type="number" value={form.capital} onChange={e=>setForm({...form, capital:Number(e.target.value)})} /></div>
