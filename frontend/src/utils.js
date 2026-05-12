@@ -67,7 +67,7 @@ export const agg = (data) => {
   const invTotalCost = inventory.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
 
   // CASH IN = all sources of money arriving
-  const totalCashIn = ownerCapital + totalCapital + hawalaIn + manualCashIn;
+  const totalCashIn = hawalaIn + manualCashIn;
   // CASH OUT = all sources of money leaving
   const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaDiscount + manualCashOut;
   const cashInHand = totalCashIn - totalCashOut;
