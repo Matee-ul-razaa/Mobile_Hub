@@ -88,7 +88,7 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
         <div className="kpi">
           <div className="kpi-label">Cash In Hand</div>
           <div className={`kpi-value ${a.cashInHand >= 0 ? 'pos' : 'neg'}`}>{fmtKRW(a.cashInHand)}</div>
-          <div className="kpi-sub">Cash in + Fazi Cash − Out − Exp − Payouts</div>
+          <div className="kpi-sub">Fazi Cash − Inventory − Exp − Payouts</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">Inventory Value</div>

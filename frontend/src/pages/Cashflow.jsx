@@ -123,35 +123,9 @@ const Cashflow = ({ toggleMenu, onLogout }) => {
     });
   });
 
-  // 5. Owner Investments — always Cash In
-  (data.ownerInvestments || []).forEach(o => {
-    allMovements.push({
-      _id: `own-${o._id}`,
-      date: o.date,
-      type: 'in',
-      source: 'Owner Investment',
-      origin: 'Investment',
-      note: o.note || '',
-      amount: o.amountKRW || 0,
-      deletable: false,
-    });
-  });
-
-  // 6. Investor Capital — always Cash In
-  (data.investors || []).forEach(inv => {
-    if (Number(inv.capital) > 0) {
-      allMovements.push({
-        _id: `inv-cap-${inv._id}`,
-        date: inv.createdAt ? inv.createdAt.slice(0, 10) : '',
-        type: 'in',
-        source: `${inv.name} — Capital`,
-        origin: 'Investor',
-        note: '',
-        amount: Number(inv.capital) || 0,
-        deletable: false,
-      });
-    }
-  });
+  // Note: Owner Investments and Investor Capital are NOT listed here
+  // because that money arrives in Korea via Fazi Cash (already counted above).
+  // Adding them here would cause double-counting.
 
   // 7. Inventory Purchases — always Cash Out
   (data.inventory || []).forEach(item => {
