@@ -111,7 +111,7 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
           <div className="kpi-sub">After expenses</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">Pending Receivable</div>
+          <div className="kpi-label">Fazi Receivable</div>
           <div className={`kpi-value ${a.pendingReceivable > 0 ? 'neg' : ''}`}>{fmtKRW(a.pendingReceivable)}</div>
           <div className="kpi-sub">Yet to be collected via Fazi Cash</div>
         </div>

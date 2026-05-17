@@ -27,21 +27,31 @@ const CapitalProfit = ({ toggleMenu, onLogout }) => {
           </button>
         </div>
       </div>
-      <div className="kpi-grid">
+      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <div className="kpi">
           <div className="kpi-label">TOTAL CAPITAL POOL</div>
           <div className="kpi-value purple">{fmtKRW(a.totalCapitalPool)}</div>
           <div className="kpi-sub">Working capital including profits</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">INVESTOR CAPITAL</div>
-          <div className="kpi-value">{fmtKRW(a.totalCapital)}</div>
-          <div className="kpi-sub">From 5 investors</div>
-        </div>
-        <div className="kpi">
           <div className="kpi-label">MY OWN INVESTMENT</div>
           <div className="kpi-value brand">{fmtKRW(a.ownerCapital)}</div>
           <div className="kpi-sub">Your own money added</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">PERMANENT INVESTORS</div>
+          <div className="kpi-value">{fmtKRW(a.permCapital)}</div>
+          <div className="kpi-sub">Long-term business partners</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">TEMPORARY / SHORT-TERM</div>
+          <div className="kpi-value warning">{fmtKRW(a.tempCapital)}</div>
+          <div className="kpi-sub">Short-term advances</div>
+        </div>
+        <div className="kpi">
+          <div className="kpi-label">TOTAL INVESTORS</div>
+          <div className="kpi-value info">{fmtKRW(a.totalCapital)}</div>
+          <div className="kpi-sub">Perm + Temp Total</div>
         </div>
         <div className="kpi">
           <div className="kpi-label">RETAINED PROFIT</div>
@@ -127,7 +137,7 @@ const CapitalProfit = ({ toggleMenu, onLogout }) => {
               <tbody>
                 <tr><td>Cash In Hand</td><td className="num"><strong>{fmtKRW(a.cashInHand)}</strong></td></tr>
                 <tr><td>Inventory Value <span className="muted" style={{ fontSize: '10px' }}>(stock remaining)</span></td><td className="num"><strong>{fmtKRW(a.invValue)}</strong></td></tr>
-                <tr><td>Pending Receivable <span className="muted" style={{ fontSize: '10px' }}>(not yet received)</span></td><td className="num"><strong>{fmtKRW(a.pendingReceivable)}</strong></td></tr>
+                <tr><td>Fazi Receivable <span className="muted" style={{ fontSize: '10px' }}>(not yet received)</span></td><td className="num"><strong>{fmtKRW(a.pendingReceivable)}</strong></td></tr>
                 <tr style={{ background: 'var(--surface-2)', fontWeight: '700' }}>
                   <td>Total Business Assets</td>
                   <td className="num">{fmtKRW(a.cashInHand + a.invValue + a.pendingReceivable)}</td>
@@ -185,7 +195,7 @@ const CapitalProfit = ({ toggleMenu, onLogout }) => {
         <div style={{ fontSize: '11px', color: 'var(--text-3)', lineHeight: '1.8' }}>
           <p><strong>Total Capital Pool = Initial Investor Capital + Retained Profit.</strong> This is the real working capital of your business. It grows automatically as you make profit.</p>
           <p><strong>Why "Realized" Profit:</strong> A mobile shipped to Pakistan isn't profit until the cash reaches you via Fazi Cash. If you've received half the payment for a shipment, only half of that sale's profit counts as realized. This keeps your capital figure honest — you can only reinvest money that actually exists.</p>
-          <p><strong>Where the profit sits:</strong> Retained profit doesn't go into a separate box — it's mixed into your working cash, your inventory, and your pending receivables. The "Business Position Today" table shows where everything actually is right now.</p>
+          <p><strong>Where the profit sits:</strong> Retained profit doesn't go into a separate box — it's mixed into your working cash, your inventory, and your fazi receivables. The "Business Position Today" table shows where everything actually is right now.</p>
         </div>
       </div>
     </div>

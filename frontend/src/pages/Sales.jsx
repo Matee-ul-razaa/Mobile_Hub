@@ -291,7 +291,7 @@ const Sales = ({ toggleMenu, onLogout }) => {
           <div className="kpi-value pos">{fmtKRW(a.grossProfit)}</div>
         </div>
         <div className="kpi">
-          <div className="kpi-label">PENDING RECEIVABLE</div>
+          <div className="kpi-label">FAZI RECEIVABLE</div>
           <div className="kpi-value neg">{fmtKRW(a.pendingReceivable)}</div>
         </div>
       </div>

@@ -54,8 +54,12 @@ export const agg = (data) => {
   const hawalaPending = hawala.filter(h => h.status === 'Unreceived').reduce((a,x)=>a+(+x.amountKRW||0),0);
   const pendingReceivable = sales.reduce((a,x)=> a + Math.max(0, (x.qty*x.pricePerUnit) - (x.received||0)), 0);
   
-  const totalCapital = investors.reduce((a,x)=>a+(+x.capital||0),0);
-  const totalCapitalPKR = investors.reduce((a,x)=>a+(+x.capitalPKR||0),0);
+  const permCapital = investors.filter(x => x.type !== 'Temporary').reduce((a,x)=>a+(+x.capital||0),0);
+  const permCapitalPKR = investors.filter(x => x.type !== 'Temporary').reduce((a,x)=>a+(+x.capitalPKR||0),0);
+  const tempCapital = investors.filter(x => x.type === 'Temporary').reduce((a,x)=>a+(+x.capital||0),0);
+  const tempCapitalPKR = investors.filter(x => x.type === 'Temporary').reduce((a,x)=>a+(+x.capitalPKR||0),0);
+  const totalCapital = permCapital + tempCapital;
+  const totalCapitalPKR = permCapitalPKR + tempCapitalPKR;
   const ownerCapital = ownerInvestments.reduce((a,x)=>a+(+x.amountKRW||0),0);
   const ownerCapitalPKR = ownerInvestments.reduce((a,x)=>a+(+x.amountPKR||0),0);
   
@@ -99,6 +103,7 @@ export const agg = (data) => {
     invValue, invUnits, salesRev, salesUnits, salesCOGS, grossProfit, totalExp, netProfit,
     hawalaIn, hawalaPKR, hawalaDiscount, hawalaPending, pendingReceivable,
     totalCapital, totalCapitalPKR, ownerCapital, ownerCapitalPKR,
+    permCapital, permCapitalPKR, tempCapital, tempCapitalPKR,
     totalMonthly, totalMonthlyPKR, totalPaid, totalPaidPKR,
     totalCashIn, totalCashOut, cashInHand, realizedRevenue, realizedGrossProfit, retainedProfit, totalCapitalPool
   };
