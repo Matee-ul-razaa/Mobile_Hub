@@ -66,10 +66,10 @@ export const agg = (data) => {
   // Total cost of ALL phones ever purchased (cash that left your hand)
   const invTotalCost = inventory.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
 
-  // CASH IN = all sources of money arriving
-  const totalCashIn = hawalaIn + manualCashIn;
-  // CASH OUT = all sources of money leaving
-  const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaDiscount + manualCashOut;
+  // CASH IN = Investor + My Investment (Capital-centric approach)
+  const totalCashIn = ownerCapital + totalCapital;
+  // CASH OUT = Inventory Cost + Expenses + Payouts + Pending Receivables + Hawala Discounts + Manual Out
+  const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaPending + pendingReceivable + hawalaDiscount + manualCashOut;
   const cashInHand = totalCashIn - totalCashOut;
 
   // REALIZED PROFIT LOGIC (The "Real" Cash Profit)
