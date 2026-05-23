@@ -50,7 +50,7 @@ const Hawala = ({ toggleMenu, onLogout }) => {
         <div className="kpi" style={{ borderLeft: '4px solid var(--orange)' }}>
           <div className="kpi-label">Pending Collect</div>
           <div className="kpi-value" style={{ color: 'var(--orange)' }}>{fmtKRW(a.hawalaPending)}</div>
-          <div className="kpi-sub">Unreceived money</div>
+          <div className="kpi-sub">Yet to be collected via Fazi Cash</div>
         </div>
       </div>
 
