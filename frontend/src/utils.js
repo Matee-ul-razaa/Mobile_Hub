@@ -72,8 +72,8 @@ export const agg = (data) => {
 
   // CASH IN = Investor + My Investment (Capital-centric approach)
   const totalCashIn = ownerCapital + totalCapital;
-  // CASH OUT = Inventory Cost + Expenses + Payouts + Pending Receivables + Hawala Discounts + Manual Out
-  const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaPending + pendingReceivable + hawalaDiscount + manualCashOut;
+  // CASH OUT = Inventory Cost + Expenses + Payouts + Pending Receivables + Hawala Discounts
+  const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaPending + pendingReceivable + hawalaDiscount;
   const cashInHand = totalCashIn - totalCashOut;
 
   // REALIZED PROFIT LOGIC (The "Real" Cash Profit)
