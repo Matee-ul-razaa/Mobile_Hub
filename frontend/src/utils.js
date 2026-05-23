@@ -70,8 +70,8 @@ export const agg = (data) => {
   // Total cost of ALL phones ever purchased (cash that left your hand)
   const invTotalCost = inventory.reduce((a, x) => a + (Number(x.purchasePrice) || 0), 0);
 
-  // CASH IN = Investor + My Investment (Capital-centric approach)
-  const totalCashIn = ownerCapital + totalCapital;
+  // CASH IN = Investor Capital + Owner Investment + Fazi Cash Received (Excel ledger logic)
+  const totalCashIn = ownerCapital + totalCapital + hawalaIn;
   // CASH OUT = Inventory Cost + Expenses + Payouts + Pending Receivables + Hawala Discounts
   const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaPending + pendingReceivable + hawalaDiscount;
   const cashInHand = totalCashIn - totalCashOut;
