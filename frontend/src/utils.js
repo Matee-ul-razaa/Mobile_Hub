@@ -51,7 +51,7 @@ export const agg = (data) => {
   const hawalaIn = receivedHawala.reduce((a,x)=>a+(+x.amountKRW||0),0);
   const hawalaPKR = receivedHawala.reduce((a,x)=>a+(+x.amountPKR||0),0);
   const hawalaDiscount = receivedHawala.reduce((a,x)=>a+(+x.discountKRW||0),0);
-  const hawalaPending = hawala.filter(h => h.status === 'Unreceived').reduce((a,x)=>a + Math.max(0, (+x.amountKRW||0) - (+x.discountKRW||0)),0);
+  const hawalaPending = hawala.filter(h => h.status === 'Unreceived').reduce((a,x)=>a + (+x.amountKRW||0),0);
   const pendingReceivable = sales.reduce((a,x)=> a + Math.max(0, (x.qty*x.pricePerUnit) - (x.received||0)), 0);
   
   const permCapital = investors.filter(x => x.type !== 'Temporary').reduce((a,x)=>a+(+x.capital||0),0);
