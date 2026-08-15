@@ -19,11 +19,47 @@ app.use('/', apiRoutes); // Fallback for direct function calls
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mobile_hub';
 const PORT = process.env.PORT || 5001;
 
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Serverless-optimized MongoDB connection with caching
+let cachedDb = null;
 
-if (process.env.NODE_ENV !== 'production') {
+async function connectToDatabase() {
+  if (cachedDb) {
+    return cachedDb;
+  }
+
+  const opts = {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 30000,
+    maxPoolSize: 10,
+    minPoolSize: 2,
+  };
+
+  const conn = await mongoose.connect(MONGODB_URI, opts);
+  cachedDb = conn;
+  console.log('Connected to MongoDB');
+  return conn;
+}
+
+// Connect to database before handling requests in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(async (req, res, next) => {
+    try {
+      await connectToDatabase();
+      next();
+    } catch (err) {
+      console.error('MongoDB connection error:', err);
+      res.status(500).json({ error: 'Database connection failed' });
+    }
+  });
+} else {
+  // Development: connect immediately
+  mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 30000,
+  })
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
+
   app.listen(PORT, () => {
     console.log(`Backend server is running on http://localhost:${PORT}`);
   });
