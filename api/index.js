@@ -24,13 +24,14 @@ let cachedDb = null;
 let isConnecting = false;
 
 async function connectToDatabase() {
-  if (cachedDb && mongoose.connection.readyState === 1) {
-    return cachedDb;
+  // Return existing connection if it's ready
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
   }
 
+  // If already connecting, wait for it to complete
   if (isConnecting) {
-    // Wait for existing connection attempt
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
     return connectToDatabase();
   }
 
@@ -38,24 +39,39 @@ async function connectToDatabase() {
 
   try {
     const opts = {
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 15000,
       socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
+      connectTimeoutMS: 15000,
       maxPoolSize: 10,
       minPoolSize: 2,
-      bufferMaxEntries: 0, // Disable buffering to prevent timeout errors
-      bufferCommands: false, // Disable command buffering
+      bufferMaxEntries: 0,
+      bufferCommands: false,
     };
 
-    if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(MONGODB_URI, opts);
+    // Disconnect existing connection if any
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
     }
+
+    await mongoose.connect(MONGODB_URI, opts);
+    
+    // Wait for connection to be fully established
+    await new Promise((resolve, reject) => {
+      if (mongoose.connection.readyState === 1) {
+        resolve();
+      } else {
+        mongoose.connection.once('connected', resolve);
+        mongoose.connection.once('error', reject);
+        setTimeout(() => reject(new Error('Connection timeout')), 20000);
+      }
+    });
     
     cachedDb = mongoose.connection;
     console.log('Connected to MongoDB');
     return cachedDb;
   } catch (err) {
     console.error('MongoDB connection error:', err);
+    isConnecting = false;
     throw err;
   } finally {
     isConnecting = false;
@@ -76,7 +92,7 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   // Development: connect immediately
   mongoose.connect(MONGODB_URI, {
-    serverSelectionTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 15000,
     socketTimeoutMS: 45000,
     bufferMaxEntries: 0,
     bufferCommands: false,
