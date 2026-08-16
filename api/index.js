@@ -40,7 +40,6 @@ async function connectToDatabase() {
       connectTimeoutMS: 15000,
       maxPoolSize: 10,
       minPoolSize: 2,
-      bufferMaxEntries: 0,
       bufferCommands: false,
     };
 
@@ -90,7 +89,6 @@ if (process.env.NODE_ENV === 'production') {
   mongoose.connect(MONGODB_URI, {
     serverSelectionTimeoutMS: 15000,
     socketTimeoutMS: 45000,
-    bufferMaxEntries: 0,
     bufferCommands: false,
   })
     .then(() => console.log('Connected to MongoDB'))
