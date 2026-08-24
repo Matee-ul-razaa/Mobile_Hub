@@ -42,11 +42,11 @@ async function connectToDatabase() {
       maxPoolSize: 2, // Reduced for M0 cluster (limit is ~500 connections)
       minPoolSize: 1,
       maxIdleTimeMS: 30000, // Close idle connections after 30s
-      bufferCommands: false,
     };
 
     // Only connect if not already connected
     if (mongoose.connection.readyState === 0) {
+      console.log('Connecting to MongoDB...');
       await mongoose.connect(MONGODB_URI, opts);
       console.log('Connected to MongoDB');
     }
