@@ -91,7 +91,7 @@ export const agg = (data) => {
   const permCapitalPKR = investors.filter(x => x.type !== 'Temporary').reduce((a, x) => a + (+x.capitalPKR || 0), 0);
   const tempCapital = investors.filter(x => x.type === 'Temporary').reduce((a, x) => a + (+x.capital || 0), 0);
   const tempCapitalPKR = investors.filter(x => x.type === 'Temporary').reduce((a, x) => a + (+x.capitalPKR || 0), 0);
-  const totalCapital = permCapital + tempCapital;
+  const totalCapital = permCapital + tempCapital + hawalaPending;
   const totalCapitalPKR = permCapitalPKR + tempCapitalPKR;
   const ownerCapital = ownerInvestments.reduce((a, x) => a + (+x.amountKRW || 0), 0);
   const ownerCapitalPKR = ownerInvestments.reduce((a, x) => a + (+x.amountPKR || 0), 0);
