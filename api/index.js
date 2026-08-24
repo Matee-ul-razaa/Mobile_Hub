@@ -15,49 +15,31 @@ app.use(express.json({ limit: '2mb' }));
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mobile_hub';
 const PORT = process.env.PORT || 5001;
 
-// Serverless-optimized MongoDB connection with proper caching
-let cachedDb = null;
-let isConnecting = false;
+// Simple MongoDB connection for serverless
+let isConnected = false;
 
 async function connectToDatabase() {
-  // Return existing connection if it's ready
-  if (mongoose.connection.readyState === 1) {
+  if (isConnected && mongoose.connection.readyState === 1) {
     return mongoose.connection;
   }
 
-  // If already connecting, wait for it to complete
-  if (isConnecting) {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return connectToDatabase();
-  }
-
-  isConnecting = true;
-
   try {
-    // Standard connection options for M0 cluster
     const opts = {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 15000,
-      maxPoolSize: 5,
-      minPoolSize: 1,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 30000,
+      maxPoolSize: 3,
     };
 
-    // Only connect if not already connected
     if (mongoose.connection.readyState === 0) {
-      console.log('Connecting to MongoDB...');
       await mongoose.connect(MONGODB_URI, opts);
-      console.log('Connected to MongoDB');
+      isConnected = true;
+      console.log('MongoDB connected');
     }
-    
-    cachedDb = mongoose.connection;
-    return cachedDb;
+    return mongoose.connection;
   } catch (err) {
     console.error('MongoDB connection error:', err);
-    isConnecting = false;
+    isConnected = false;
     throw err;
-  } finally {
-    isConnecting = false;
   }
 }
 
