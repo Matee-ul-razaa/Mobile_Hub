@@ -15,7 +15,7 @@ app.use(express.json({ limit: '2mb' }));
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mobile_hub';
 const PORT = process.env.PORT || 5001;
 
-// Serverless-optimized MongoDB connection with caching
+// Serverless-optimized MongoDB connection with proper caching
 let cachedDb = null;
 let isConnecting = false;
 
@@ -34,35 +34,24 @@ async function connectToDatabase() {
   isConnecting = true;
 
   try {
+    // Optimized for M0 cluster - smaller pool size to avoid connection limits
     const opts = {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 15000,
-      maxPoolSize: 10,
-      minPoolSize: 2,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 30000,
+      connectTimeoutMS: 10000,
+      maxPoolSize: 2, // Reduced for M0 cluster (limit is ~500 connections)
+      minPoolSize: 1,
+      maxIdleTimeMS: 30000, // Close idle connections after 30s
       bufferCommands: false,
     };
 
-    // Disconnect existing connection if any
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
+    // Only connect if not already connected
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(MONGODB_URI, opts);
+      console.log('Connected to MongoDB');
     }
-
-    await mongoose.connect(MONGODB_URI, opts);
-    
-    // Wait for connection to be fully established
-    await new Promise((resolve, reject) => {
-      if (mongoose.connection.readyState === 1) {
-        resolve();
-      } else {
-        mongoose.connection.once('connected', resolve);
-        mongoose.connection.once('error', reject);
-        setTimeout(() => reject(new Error('Connection timeout')), 20000);
-      }
-    });
     
     cachedDb = mongoose.connection;
-    console.log('Connected to MongoDB');
     return cachedDb;
   } catch (err) {
     console.error('MongoDB connection error:', err);
@@ -73,27 +62,16 @@ async function connectToDatabase() {
   }
 }
 
-// Connect to database before handling requests in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(async (req, res, next) => {
-    try {
-      await connectToDatabase();
-      next();
-    } catch (err) {
-      console.error('MongoDB connection error:', err);
-      res.status(500).json({ error: 'Database connection failed' });
-    }
-  });
-} else {
-  // Development: connect immediately
-  mongoose.connect(MONGODB_URI, {
-    serverSelectionTimeoutMS: 15000,
-    socketTimeoutMS: 45000,
-    bufferCommands: false,
-  })
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('MongoDB connection error:', err));
-}
+// Connect to database before handling requests (Serverless or Local)
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
 
 // Match both /api and / since Vercel rewrites might pass different path segments
 // MUST BE AFTER DB CONNECTION MIDDLEWARE
