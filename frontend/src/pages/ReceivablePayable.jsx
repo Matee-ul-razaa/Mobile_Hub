@@ -33,10 +33,7 @@ const ReceivablePayable = ({ toggleMenu, onLogout }) => {
       try {
         console.log('Deleting record with ID:', id);
         await deleteRP(id);
-        console.log('Delete successful, refreshing data...');
-        await refreshData();
-        console.log('Data refreshed');
-        showToast('Record deleted');
+        console.log('Delete successful');
       } catch (err) {
         console.error('Delete error:', err);
         showToast('Error deleting record: ' + (err.message || 'Unknown error'), 'danger');
