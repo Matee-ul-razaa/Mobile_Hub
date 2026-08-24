@@ -205,7 +205,7 @@ export const DataProvider = ({ children }) => {
         await request(`/api/${getPath(key)}/${id}`, { method: 'DELETE' });
         setData(prev => ({ ...prev, [key]: (prev[key] || []).filter(item => item._id !== id) }));
         logActivity('delete', key, id);
-        if (['sales', 'hawala', 'inventory'].includes(key)) fetchData();
+        if (['sales', 'hawala', 'inventory', 'rp'].includes(key)) fetchData();
         showToast('Entry deleted successfully');
       } catch (err) {
         showToast(err.message || 'Delete failed', 'danger');
