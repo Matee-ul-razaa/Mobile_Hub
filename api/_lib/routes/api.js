@@ -350,7 +350,10 @@ crudRoutes('/owner-investment', OwnerInvestment, { validate: (b) => !b.date ? 'D
 
 crudRoutes('/buyer-payments', BuyerPayment, { validate: (b) => !b.date ? 'Date is required' : !b.buyer ? 'Buyer name is required' : validateAmount(b) });
 
-crudRoutes('/rp', ReceivablePayable, { validate: (b) => !b.date ? 'Date is required' : !['Receivable', 'Payable'].includes(b.type) ? 'Type must be Receivable or Payable' : !String(b.party || '').trim() ? 'Party is required' : validateAmount(b) });
+crudRoutes('/rp', ReceivablePayable, { 
+  validate: (b) => !b.date ? 'Date is required' : !['Receivable', 'Payable'].includes(b.type) ? 'Type must be Receivable or Payable' : !String(b.party || '').trim() ? 'Party is required' : validateAmount(b),
+  detail: (item) => `${item.type} - ${item.party}`
+});
 
 // Hawala / Fazi Cash routes with Buyer Payment synchronization
 async function syncHawalaToPayment(hawala, action = 'create') {

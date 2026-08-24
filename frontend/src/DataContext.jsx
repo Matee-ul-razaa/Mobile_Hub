@@ -202,12 +202,26 @@ export const DataProvider = ({ children }) => {
   const deleteItem = async (key, id) => {
     showConfirm(`Delete this ${key.slice(0, -1)}?`, async () => {
       try {
-        await request(`/api/${getPath(key)}/${id}`, { method: 'DELETE' });
+        console.log(`[deleteItem] Deleting ${key} with ID:`, id);
+        const response = await request(`/api/${getPath(key)}/${id}`, { method: 'DELETE' });
+        console.log(`[deleteItem] Delete response:`, response);
+        
         setData(prev => ({ ...prev, [key]: (prev[key] || []).filter(item => item._id !== id) }));
+        console.log(`[deleteItem] Local state updated, removed ID:`, id);
+        
         logActivity('delete', key, id);
-        if (['sales', 'hawala', 'inventory', 'rp'].includes(key)) fetchData();
         showToast('Entry deleted successfully');
+        
+        // Refresh data after successful delete to ensure sync with server
+        if (['sales', 'hawala', 'inventory', 'rp'].includes(key)) {
+          console.log(`[deleteItem] Scheduling data refresh for ${key}`);
+          setTimeout(() => {
+            console.log(`[deleteItem] Executing data refresh`);
+            fetchData();
+          }, 500);
+        }
       } catch (err) {
+        console.error(`[deleteItem] Delete error:`, err);
         showToast(err.message || 'Delete failed', 'danger');
       }
     });
