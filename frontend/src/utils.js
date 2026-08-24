@@ -112,8 +112,8 @@ export const agg = (data) => {
 
   // CASH IN = Investor Capital + Owner Investment + Fazi Cash Received (Excel ledger logic)
   const totalCashIn = ownerCapital + totalCapital + hawalaIn;
-  // CASH OUT = Inventory Cost + Expenses + Payouts + Pending Receivables + Hawala Discounts
-  const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaPending + pendingReceivable + hawalaDiscount;
+  // CASH OUT = Inventory Cost + Expenses + Payouts + Discounts + Receivables
+  const totalCashOut = invTotalCost + totalExp + totalPaid + hawalaDiscount + pendingReceivable;
   const cashInHand = totalCashIn - totalCashOut;
 
   // REALIZED PROFIT LOGIC (The "Real" Cash Profit)
