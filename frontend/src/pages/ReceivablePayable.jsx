@@ -31,11 +31,15 @@ const ReceivablePayable = ({ toggleMenu, onLogout }) => {
   const handleDelete = (id) => {
     showConfirm('Are you sure you want to delete this record?', async () => {
       try {
+        console.log('Deleting record with ID:', id);
         await deleteRP(id);
+        console.log('Delete successful, refreshing data...');
         await refreshData();
+        console.log('Data refreshed');
         showToast('Record deleted');
       } catch (err) {
-        showToast('Error deleting record', 'danger');
+        console.error('Delete error:', err);
+        showToast('Error deleting record: ' + (err.message || 'Unknown error'), 'danger');
       }
     });
   };
