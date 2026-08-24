@@ -34,14 +34,13 @@ async function connectToDatabase() {
   isConnecting = true;
 
   try {
-    // Optimized for M0 cluster - smaller pool size to avoid connection limits
+    // Standard connection options for M0 cluster
     const opts = {
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 30000,
-      connectTimeoutMS: 10000,
-      maxPoolSize: 2, // Reduced for M0 cluster (limit is ~500 connections)
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 15000,
+      maxPoolSize: 5,
       minPoolSize: 1,
-      maxIdleTimeMS: 30000, // Close idle connections after 30s
     };
 
     // Only connect if not already connected
