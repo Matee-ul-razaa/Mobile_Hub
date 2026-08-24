@@ -3,7 +3,7 @@ import { useData } from '../DataContext';
 import { fmtKRW, agg } from '../utils';
 
 const ReceivablePayable = ({ toggleMenu, onLogout }) => {
-  const { data, addRP, updateRP, deleteRP, showToast, showConfirm } = useData();
+  const { data, addRP, updateRP, deleteRP, showToast, showConfirm, refreshData } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
@@ -32,6 +32,7 @@ const ReceivablePayable = ({ toggleMenu, onLogout }) => {
     showConfirm('Are you sure you want to delete this record?', async () => {
       try {
         await deleteRP(id);
+        await refreshData();
         showToast('Record deleted');
       } catch (err) {
         showToast('Error deleting record', 'danger');
