@@ -110,8 +110,8 @@ export const agg = (data) => {
   // Total pending receivable = unpaid sales + manual pending receivables
   const totalPendingReceivable = pendingReceivable + rpReceivablesPending;
 
-  // CASH IN = Investor Capital + Owner Investment (Fazi cash is separate and auto-adds to capital when received)
-  const totalCashIn = ownerCapital + totalCapital;
+  // CASH IN = Investor Capital (Fazi cash is separate and auto-adds to capital when received)
+  const totalCashIn = totalCapital;
   // CASH OUT = Inventory Cost + Expenses + Payouts
   const totalCashOut = invTotalCost + totalExp + totalPaid;
   const cashInHand = totalCashIn - totalCashOut;
