@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../DataContext';
-import { fmtKRW, agg } from '../utils';
+import { fmtKRW, agg, parseExcelDate } from '../utils';
 import * as XLSX from 'xlsx';
 
 const Sales = ({ toggleMenu, onLogout }) => {
@@ -172,16 +172,7 @@ const Sales = ({ toggleMenu, onLogout }) => {
               if (!buyer) buyer = defaultBuyer || 'Unknown Buyer';
 
               const rowDate = iDate >= 0 ? row[iDate] : '';
-              let finalDate = new Date().toISOString().slice(0, 10);
-              if (rowDate) {
-                if (rowDate instanceof Date) finalDate = rowDate.toISOString().slice(0, 10);
-                else if (!isNaN(rowDate) && Number(rowDate) > 40000) {
-                   const d = new Date((Number(rowDate) - 25569) * 86400 * 1000);
-                   finalDate = d.toISOString().slice(0, 10);
-                } else {
-                   finalDate = String(rowDate).trim();
-                }
-              }
+              const finalDate = parseExcelDate(rowDate);
 
               let unitPrice = iPrice >= 0 ? parsePrice(row[iPrice]) : 0;
               let receivedAmt = iReceived >= 0 ? parsePrice(row[iReceived]) : 0;

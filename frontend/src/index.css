@@ -308,6 +308,41 @@ button {
   border-color: var(--red-soft);
 }
 
+.action-group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-action-edit {
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px 0 0 8px;
+  transition: all 0.2s;
+}
+
+.btn-action-edit:hover {
+  background: var(--surface-2);
+}
+
+.btn-action-del {
+  background: var(--red);
+  border: 1px solid var(--red);
+  color: #fff;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 0 8px 8px 0;
+  transition: all 0.2s;
+}
+
+.btn-action-del:hover {
+  opacity: 0.9;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

@@ -17,6 +17,7 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import Capital from './pages/CapitalProfit';
 import BuyerPayments from './pages/BuyerPayments';
+import ReceivablePayable from './pages/ReceivablePayable';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -106,8 +107,8 @@ function App() {
           <NavLink to="/expenses" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <span className="icon">💸</span> Expenses
           </NavLink>
-          <NavLink to="/cashflow" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
-            <span className="icon">💵</span> Cash In / Out
+          <NavLink to="/rp" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">📒</span> Receivable & Payable
           </NavLink>
           <NavLink to="/fazi-cash" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <span className="icon">🔁</span> Fazi Cash
@@ -126,6 +127,9 @@ function App() {
           </NavLink>
           <NavLink to="/capital" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <span className="icon">📈</span> Capital & Profit
+          </NavLink>
+          <NavLink to="/cashflow" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <span className="icon">💵</span> Cash In / Out
           </NavLink>
           <NavLink to="/ai-assistant" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <span className="icon">🤖</span> AI Assistant
@@ -163,6 +167,7 @@ function App() {
           <Route path="/inventory" element={<Inventory toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/sales" element={<Sales toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/expenses" element={<Expenses toggleMenu={toggleMenu} onLogout={handleLogout} />} />
+          <Route path="/rp" element={<ReceivablePayable toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/cashflow" element={<Cashflow toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/fazi-cash" element={<Hawala toggleMenu={toggleMenu} onLogout={handleLogout} />} />
           <Route path="/investors" element={<Investors toggleMenu={toggleMenu} onLogout={handleLogout} />} />

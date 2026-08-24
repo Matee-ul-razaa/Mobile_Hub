@@ -22,11 +22,11 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
       months.push(m);
     }
     return months.map(m => {
-      const inflow = 
+      const inflow =
         (data.hawala || []).filter(h => ym(h.date) === m).reduce((s, x) => s + (Number(x.amountKRW) || 0), 0) +
         (data.cashflow || []).filter(c => c.type === 'in' && ym(c.date) === m).reduce((s, x) => s + (Number(x.amount) || 0), 0) +
         (data.ownerInvestments || []).filter(o => ym(o.date) === m).reduce((s, x) => s + (Number(x.amountKRW) || 0), 0);
-      const outflow = 
+      const outflow =
         (data.inventory || []).filter(i => ym(i.date || i.createdAt) === m).reduce((s, x) => s + (Number(x.purchasePrice) || 0), 0) +
         (data.expenses || []).filter(e => ym(e.date) === m).reduce((s, x) => s + (Number(x.amount) || 0), 0) +
         (data.cashflow || []).filter(c => c.type === 'out' && ym(c.date) === m).reduce((s, x) => s + (Number(x.amount) || 0), 0) +
@@ -110,6 +110,19 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
           <div className={`kpi-value ${a.netProfit >= 0 ? 'pos' : 'neg'}`}>{fmtKRW(a.netProfit)}</div>
           <div className="kpi-sub">After expenses</div>
         </div>
+        <div className="kpi" style={{ borderLeft: '4px solid #6366f1' }}>
+          <div className="kpi-label">Receivables & Payables</div>
+          <div style={{ display: 'flex', gap: '15px', marginTop: '4px' }}>
+            <div>
+              <div style={{ color: 'var(--green)', fontSize: '1.25rem', fontWeight: 'bold' }}>+{fmtKRW(a.rpReceivablesPending)}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>Owed to you</div>
+            </div>
+            <div>
+              <div style={{ color: 'var(--red)', fontSize: '1.25rem', fontWeight: 'bold' }}>-{fmtKRW(a.rpPayablesPending)}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-3)' }}>You owe</div>
+            </div>
+          </div>
+        </div>
         <div className="kpi">
           <div className="kpi-label">Fazi Receivable</div>
           <div className={`kpi-value ${a.pendingReceivable > 0 ? 'neg' : ''}`}>{fmtKRW(a.pendingReceivable)}</div>
@@ -156,12 +169,12 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" fontSize={11} />
                 <YAxis fontSize={11} tickFormatter={v => '₩' + (v / 1000).toFixed(0) + 'k'} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#111827', border: 'none', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
                   itemStyle={{ color: '#fff', fontSize: '13px' }}
                   labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
-                  cursor={{ fill: 'transparent' }} 
-                  shared={false} 
+                  cursor={{ fill: 'transparent' }}
+                  shared={false}
                 />
                 <Legend verticalAlign="top" height={36} />
                 <Bar dataKey="In" fill="#047857" name="Cash In" radius={[4, 4, 0, 0]} />
@@ -201,12 +214,12 @@ const Dashboard = ({ toggleMenu, onLogout }) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" fontSize={10} />
                 <YAxis fontSize={11} tickFormatter={v => '₩' + (v / 1e6).toFixed(1) + 'M'} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#111827', border: 'none', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
                   itemStyle={{ color: '#fff', fontSize: '13px' }}
                   labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: '4px' }}
-                  cursor={{ fill: 'transparent' }} 
-                  shared={false} 
+                  cursor={{ fill: 'transparent' }}
+                  shared={false}
                 />
                 <Legend verticalAlign="top" height={36} />
                 <Bar dataKey="Revenue" fill="#1e40af" radius={[4, 4, 0, 0]} />

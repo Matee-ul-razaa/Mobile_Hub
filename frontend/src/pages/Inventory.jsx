@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../DataContext';
-import { fmtKRW } from '../utils';
+import { fmtKRW, parseExcelDate } from '../utils';
 import * as XLSX from 'xlsx';
 
 const Inventory = ({ toggleMenu, onLogout }) => {
@@ -100,7 +100,7 @@ const Inventory = ({ toggleMenu, onLogout }) => {
               imei2: iIMEI2 >= 0 ? String(row[iIMEI2] || '').trim() : '',
               purchasePrice: parseInvoicePrice(priceRaw),
               notes: iMemo >= 0 ? String(row[iMemo] || '').trim() : '',
-              date: iDate >= 0 ? String(row[iDate] || '').trim() : new Date().toISOString().slice(0, 10),
+              date: iDate >= 0 ? parseExcelDate(row[iDate]) : new Date().toISOString().slice(0, 10),
             });
             success++;
           } catch (err) {

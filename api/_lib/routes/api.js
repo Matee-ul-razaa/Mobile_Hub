@@ -14,6 +14,7 @@ const OwnerInvestment = require('../models/OwnerInvestment');
 const Shipment = require('../models/Shipment');
 const Activity = require('../models/Activity');
 const BuyerPayment = require('../models/BuyerPayment');
+const ReceivablePayable = require('../models/ReceivablePayable');
 
 const TOKEN_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'mobile-hub-change-this-secret';
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
@@ -349,6 +350,8 @@ crudRoutes('/owner-investment', OwnerInvestment, { validate: (b) => !b.date ? 'D
 
 crudRoutes('/buyer-payments', BuyerPayment, { validate: (b) => !b.date ? 'Date is required' : !b.buyer ? 'Buyer name is required' : validateAmount(b) });
 
+crudRoutes('/rp', ReceivablePayable, { validate: (b) => !b.date ? 'Date is required' : !['Receivable', 'Payable'].includes(b.type) ? 'Type must be Receivable or Payable' : !String(b.party || '').trim() ? 'Party is required' : validateAmount(b) });
+
 // Hawala / Fazi Cash routes with Buyer Payment synchronization
 async function syncHawalaToPayment(hawala, action = 'create') {
   try {
@@ -525,7 +528,7 @@ router.post('/restore-data', async (req, res) => {
       Inventory.deleteMany({}), Sale.deleteMany({}), Expense.deleteMany({}),
       Cashflow.deleteMany({}), Hawala.deleteMany({}), Investor.deleteMany({}),
       Payout.deleteMany({}), OwnerInvestment.deleteMany({}), Shipment.deleteMany({}),
-      Activity.deleteMany({}), BuyerPayment.deleteMany({}),
+      Activity.deleteMany({}), BuyerPayment.deleteMany({}), ReceivablePayable.deleteMany({}),
     ]);
     if (Array.isArray(b.inventory)) await Inventory.insertMany(b.inventory.map(({ _id, ...x }) => x), { ordered: false }).catch(() => {});
     if (Array.isArray(b.sales)) await Sale.insertMany(b.sales.map(({ _id, ...x }) => x), { ordered: false }).catch(() => {});
@@ -537,6 +540,7 @@ router.post('/restore-data', async (req, res) => {
     if (Array.isArray(b.ownerInvestments)) await OwnerInvestment.insertMany(b.ownerInvestments.map(({ _id, ...x }) => x), { ordered: false }).catch(() => {});
     if (Array.isArray(b.shipments)) await Shipment.insertMany(b.shipments.map(({ _id, ...x }) => x), { ordered: false }).catch(() => {});
     if (Array.isArray(b.buyerPayments)) await BuyerPayment.insertMany(b.buyerPayments.map(({ _id, ...x }) => x), { ordered: false }).catch(() => {});
+    if (Array.isArray(b.rp)) await ReceivablePayable.insertMany(b.rp.map(({ _id, ...x }) => x), { ordered: false }).catch(() => {});
     if (b.settings) {
       const setting = await ensureSettings();
       Object.assign(setting, { businessName: b.settings.businessName, owner: b.settings.owner, apiKey: b.settings.apiKey, aiModel: b.settings.aiModel });
@@ -553,7 +557,7 @@ router.post('/reset-all', async (req, res) => {
       Inventory.deleteMany({}), Sale.deleteMany({}), Expense.deleteMany({}),
       Cashflow.deleteMany({}), Hawala.deleteMany({}), Investor.deleteMany({}),
       Payout.deleteMany({}), OwnerInvestment.deleteMany({}), Shipment.deleteMany({}),
-      Activity.deleteMany({}), BuyerPayment.deleteMany({}),
+      Activity.deleteMany({}), BuyerPayment.deleteMany({}), ReceivablePayable.deleteMany({}),
     ]);
     res.json({ message: 'All data deleted' });
   } catch (err) { res.status(500).json({ error: err.message }); }

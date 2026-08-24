@@ -48,7 +48,7 @@ const Hawala = ({ toggleMenu, onLogout }) => {
           <div className="kpi-value neg">{fmtKRW(a.hawalaDiscount)}</div>
         </div>
         <div className="kpi" style={{ borderLeft: '4px solid var(--orange)' }}>
-          <div className="kpi-label">Pending Collect</div>
+          <div className="kpi-label">Fazi Receiveables</div>
           <div className="kpi-value" style={{ color: 'var(--orange)' }}>{fmtKRW(a.hawalaPending)}</div>
           <div className="kpi-sub">Yet to be collected via Fazi Cash</div>
         </div>
@@ -56,7 +56,7 @@ const Hawala = ({ toggleMenu, onLogout }) => {
 
       <div className="card" style={{ marginBottom: '14px' }}>
         <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-3)', lineBreak: '1.5' }}>
-          <strong>How this works:</strong> The buyer in Pakistan pays in PKR. Their Korea contact hands you KRW locally. 
+          <strong>How this works:</strong> The buyer in Pakistan pays in PKR. Their Korea contact hands you KRW locally.
           Record both here. If you gave a discount on the transfer, enter it to keep your profit tracking accurate.
         </p>
       </div>
@@ -88,15 +88,15 @@ const Hawala = ({ toggleMenu, onLogout }) => {
                   <td className="num neg">{h.discountKRW ? fmtKRW(h.discountKRW) : '—'}</td>
                   <td>{h.cashReceiver || '—'}</td>
                   <td>
-                    {h.status === 'Unreceived' ? 
-                      <span style={{ color: 'var(--orange)', fontSize: '12px', fontWeight: 'bold' }}>Pending</span> : 
+                    {h.status === 'Unreceived' ?
+                      <span style={{ color: 'var(--orange)', fontSize: '12px', fontWeight: 'bold' }}>Pending</span> :
                       <span className="muted" style={{ fontSize: '12px' }}>Received</span>
                     }
                   </td>
-                  <td>
-                    <div className="inline-actions">
-                      <button className="btn btn-sm" onClick={() => { setEditingItem(h); setShowModal(true); }}>Edit</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => deleteHawala(h._id)}>Del</button>
+                  <td className="action-col">
+                    <div className="action-group">
+                      <button className="btn-action-edit" onClick={() => { setEditingItem(h); setShowModal(true); }}>Edit</button>
+                      <button className="btn-action-del" onClick={() => deleteHawala(h._id)}>Del</button>
                     </div>
                   </td>
                 </tr>
@@ -107,8 +107,8 @@ const Hawala = ({ toggleMenu, onLogout }) => {
       </div>
 
       {showModal && (
-        <HawalaModal 
-          item={editingItem} 
+        <HawalaModal
+          item={editingItem}
           sales={data.sales}
           onClose={() => setShowModal(false)}
           onSave={async (obj) => {
@@ -123,40 +123,40 @@ const Hawala = ({ toggleMenu, onLogout }) => {
 };
 
 const HawalaModal = ({ item, sales, onClose, onSave }) => {
-  const [form, setForm] = useState(item || { 
-    date: new Date().toISOString().slice(0,10), 
-    buyer: '', 
-    amountPKR: 0, 
-    amountKRW: 0, 
-    discountKRW: 0, 
-    receiverName: '', 
+  const [form, setForm] = useState(item || {
+    date: new Date().toISOString().slice(0, 10),
+    buyer: '',
+    amountPKR: 0,
+    amountKRW: 0,
+    discountKRW: 0,
+    receiverName: '',
     cashReceiver: '',
     status: 'Received',
-    note: '' 
+    note: ''
   });
 
   return (
     <div className="modal-overlay">
       <div className="modal">
         <div className="card-header"><h3 className="card-title">{item ? 'Edit' : 'Record'} Fazi Cash</h3></div>
-        <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e=>setForm({...form, date:e.target.value})} /></div>
-        <div className="form-row"><label>Buyer (Pakistan) *</label><input value={form.buyer} onChange={e=>setForm({...form, buyer:e.target.value})} /></div>
+        <div className="form-row"><label>Date</label><input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
+        <div className="form-row"><label>Buyer (Pakistan) *</label><input value={form.buyer} onChange={e => setForm({ ...form, buyer: e.target.value })} /></div>
         <div className="form-row-2">
-          <div className="form-row"><label>PKR Amount</label><input type="number" value={form.amountPKR} onChange={e=>setForm({...form, amountPKR:Number(e.target.value)})} /></div>
-          <div className="form-row"><label>KRW Received *</label><input type="number" value={form.amountKRW} onChange={e=>setForm({...form, amountKRW:Number(e.target.value)})} /></div>
+          <div className="form-row"><label>PKR Amount</label><input type="number" value={form.amountPKR} onChange={e => setForm({ ...form, amountPKR: Number(e.target.value) })} /></div>
+          <div className="form-row"><label>KRW Received *</label><input type="number" value={form.amountKRW} onChange={e => setForm({ ...form, amountKRW: Number(e.target.value) })} /></div>
         </div>
-        <div className="form-row"><label>Discount Given (KRW)</label><input type="number" value={form.discountKRW} onChange={e=>setForm({...form, discountKRW:Number(e.target.value)})} /></div>
+        <div className="form-row"><label>Discount Given (KRW)</label><input type="number" value={form.discountKRW} onChange={e => setForm({ ...form, discountKRW: Number(e.target.value) })} /></div>
         <div className="form-row-2">
-          <div className="form-row"><label>Cash Receiver (Who took the money?)</label><input value={form.cashReceiver} onChange={e=>setForm({...form, cashReceiver:e.target.value})} placeholder="e.g. Nadeem, Shop" /></div>
+          <div className="form-row"><label>Cash Receiver (Who took the money?)</label><input value={form.cashReceiver} onChange={e => setForm({ ...form, cashReceiver: e.target.value })} placeholder="e.g. Nadeem, Shop" /></div>
           <div className="form-row">
             <label>Status</label>
-            <select value={form.status} onChange={e=>setForm({...form, status:e.target.value})}>
+            <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
               <option value="Received">Received</option>
               <option value="Unreceived">Unreceived (Pending)</option>
             </select>
           </div>
         </div>
-        <div className="form-row"><label>Note</label><textarea value={form.note} onChange={e=>setForm({...form, note:e.target.value})} /></div>
+        <div className="form-row"><label>Note</label><textarea value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} /></div>
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>Cancel</button>
           <button className="btn btn-primary" onClick={() => onSave(form)}>Save Transaction</button>
